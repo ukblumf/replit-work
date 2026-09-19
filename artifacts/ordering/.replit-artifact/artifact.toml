@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/ordering/"
+title = "Ordering"
+description = "A simple purchase order management application for small businesses, with searchable orders, editable line items, stock part-number lookup, and an authenticated JSON API for external systems."
+version = "1.0.0"
+id = "artifacts/ordering"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/ordering/" ]
+localPort = 20963
+
+[services.development]
+run = "pnpm --filter @workspace/ordering run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/ordering", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/ordering/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "20963"
+BASE_PATH = "/ordering/"

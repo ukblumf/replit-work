@@ -3,7 +3,7 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: Authenticated stock control API. Send the API key as a Bearer token in the Authorization header.
+  description: Authenticated Stock Control and Ordering API. Send the configured API key as a Bearer token in the Authorization header.
 servers:
   - url: /api
     description: Base API path
@@ -12,6 +12,8 @@ tags:
     description: Health operations
   - name: stock
     description: Stock inventory operations
+  - name: orders
+    description: Purchase order operations
 security:
   - bearerAuth: []
 paths:
@@ -150,6 +152,134 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "404":
           $ref: "#/components/responses/NotFound"
+  /orders:
+    get:
+      operationId: listOrders
+      tags: [orders]
+      summary: List purchase orders
+      description: Returns purchase orders, optionally filtered by order number or a contained part number.
+      parameters:
+        - name: orderNumber
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Case-insensitive partial match on Order Number.
+        - name: partNumber
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Case-insensitive partial match on a line Part Number.
+      responses:
+        "200":
+          description: Purchase order summaries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/OrderSummary"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      operationId: createOrder
+      tags: [orders]
+      summary: Create a purchase order
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OrderInput"
+      responses:
+        "201":
+          description: Purchase order created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Order"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "409":
+          description: Order Number already exists
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /orders/summary:
+    get:
+      operationId: getOrderSummary
+      tags: [orders]
+      summary: Get order summary
+      description: Returns purchase order totals and status counts.
+      responses:
+        "200":
+          description: Purchase order summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrderSummaryTotals"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /orders/{orderNumber}:
+    get:
+      operationId: getOrder
+      tags: [orders]
+      summary: Retrieve a purchase order
+      parameters:
+        - $ref: "#/components/parameters/OrderNumber"
+      responses:
+        "200":
+          description: Purchase order with lines
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Order"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      operationId: updateOrder
+      tags: [orders]
+      summary: Update a purchase order
+      parameters:
+        - $ref: "#/components/parameters/OrderNumber"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OrderUpdate"
+      responses:
+        "200":
+          description: Updated purchase order
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Order"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      operationId: deleteOrder
+      tags: [orders]
+      summary: Delete a purchase order
+      parameters:
+        - $ref: "#/components/parameters/OrderNumber"
+      responses:
+        "204":
+          description: Purchase order deleted
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
 components:
   securitySchemes:
     bearerAuth:
@@ -166,6 +296,14 @@ components:
         type: string
         minLength: 1
       description: The unique Part Number.
+    OrderNumber:
+      name: orderNumber
+      in: path
+      required: true
+      schema:
+        type: string
+        minLength: 1
+      description: The unique Order Number.
   responses:
     Unauthorized:
       description: Missing or invalid API key
@@ -300,6 +438,180 @@ components:
         - inventoryCost
         - inventoryRetailValue
         - lowStockCount
+    OrderLine:
+      type: object
+      properties:
+        lineNumber:
+          type: integer
+          minimum: 1
+        partNumber:
+          type: string
+        externalPartNumber:
+          type: string
+        description:
+          type: string
+        quantity:
+          type: integer
+          minimum: 1
+        unitPrice:
+          type: number
+          minimum: 0
+      required:
+        - lineNumber
+        - partNumber
+        - externalPartNumber
+        - description
+        - quantity
+        - unitPrice
+    OrderLineInput:
+      type: object
+      properties:
+        lineNumber:
+          type: integer
+          minimum: 1
+        partNumber:
+          type: string
+          minLength: 1
+        externalPartNumber:
+          type: string
+        description:
+          type: string
+        quantity:
+          type: integer
+          minimum: 1
+        unitPrice:
+          type: number
+          minimum: 0
+      required:
+        - lineNumber
+        - partNumber
+        - externalPartNumber
+        - description
+        - quantity
+        - unitPrice
+    Order:
+      type: object
+      properties:
+        orderNumber:
+          type: string
+        orderDate:
+          type: string
+          format: date
+        supplierName:
+          type: string
+        status:
+          type: string
+          enum: [Draft, Submitted, Confirmed, Received, Cancelled]
+        lines:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/OrderLine"
+        totalValue:
+          type: number
+          minimum: 0
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - orderNumber
+        - orderDate
+        - supplierName
+        - status
+        - lines
+        - totalValue
+        - createdAt
+        - updatedAt
+    OrderInput:
+      type: object
+      properties:
+        orderNumber:
+          type: string
+          minLength: 1
+        orderDate:
+          type: string
+          format: date
+        supplierName:
+          type: string
+          minLength: 1
+        status:
+          type: string
+          enum: [Draft, Submitted, Confirmed, Received, Cancelled]
+        lines:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/OrderLineInput"
+      required:
+        - orderNumber
+        - orderDate
+        - supplierName
+        - status
+        - lines
+    OrderUpdate:
+      type: object
+      properties:
+        orderDate:
+          type: string
+          format: date
+        supplierName:
+          type: string
+          minLength: 1
+        status:
+          type: string
+          enum: [Draft, Submitted, Confirmed, Received, Cancelled]
+        lines:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/OrderLineInput"
+      minProperties: 1
+    OrderSummary:
+      type: object
+      properties:
+        orderNumber:
+          type: string
+        orderDate:
+          type: string
+          format: date
+        supplierName:
+          type: string
+        status:
+          type: string
+          enum: [Draft, Submitted, Confirmed, Received, Cancelled]
+        lineCount:
+          type: integer
+        totalValue:
+          type: number
+          minimum: 0
+      required:
+        - orderNumber
+        - orderDate
+        - supplierName
+        - status
+        - lineCount
+        - totalValue
+    OrderSummaryTotals:
+      type: object
+      properties:
+        orderCount:
+          type: integer
+        openOrderCount:
+          type: integer
+        totalValue:
+          type: number
+        statusCounts:
+          type: object
+          additionalProperties:
+            type: integer
+      required:
+        - orderCount
+        - openOrderCount
+        - totalValue
+        - statusCounts
     Error:
       type: object
       properties:
