@@ -59,7 +59,6 @@ export default function Dashboard() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
         <div>
           <h1 className="text-3xl font-black uppercase tracking-tight text-foreground">Inventory Overview</h1>
-          <p className="text-muted-foreground mt-1 font-mono text-sm border-l-2 border-primary pl-3 ml-1">Workspace stock totals and quick actions.</p>
         </div>
         <Button onClick={() => setIsAddModalOpen(true)} className="gap-2 shrink-0">
           <Plus size={18} strokeWidth={3} />
