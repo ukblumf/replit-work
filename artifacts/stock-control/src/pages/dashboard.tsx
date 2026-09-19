@@ -62,10 +62,9 @@ export default function Dashboard() {
         </div>
         <Button onClick={() => setIsAddModalOpen(true)} className="gap-2 shrink-0">
           <Plus size={18} strokeWidth={3} />
-          <span>RECEIVE NEW PART</span>
+          <span>NEW PART</span>
         </Button>
       </div>
-
       <Card className="shadow-md">
         <CardHeader className="bg-muted/30 pb-4">
           <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
@@ -141,7 +140,6 @@ export default function Dashboard() {
           </div>
         </CardContent>
       </Card>
-
       <Modal 
         open={isAddModalOpen} 
         onOpenChange={setIsAddModalOpen}
