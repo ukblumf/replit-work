@@ -2,8 +2,6 @@ import { type ReactNode } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ErrorBoundary } from '@/components/error-boundary';
 import { Toaster } from '@/components/ui/toaster';
-import { TooltipProvider } from '@/components/ui/tooltip';
-import NotFound from '@/pages/not-found';
 import {
   Route,
   Switch,
@@ -11,33 +9,37 @@ import {
   Router as WouterRouter,
 } from 'wouter';
 
+import { Layout } from '@/components/layout';
+import OrderList from '@/pages/orders/list';
+import OrderForm from '@/pages/orders/form';
+import OrderDetail from '@/pages/orders/detail';
+import ApiDocs from '@/pages/api-docs';
+
 const queryClient = new QueryClient();
 
-function Home() {
+// Optional catch-all for 404
+function NotFound() {
   return (
-    <div className="min-h-screen w-full flex items-center justify-center bg-gray-50">
-      <div className="text-center">
-        <h1 className="text-2xl font-bold text-gray-900">
-          Replit Agent is building...
-        </h1>
-        <p className="mt-2 text-sm text-gray-600">
-          Your app will appear here once it's ready.
-        </p>
-      </div>
+    <div className="flex flex-col items-center justify-center min-h-[50vh] text-center">
+      <h1 className="text-4xl font-bold mb-2">404</h1>
+      <p className="text-muted-foreground">The page you're looking for doesn't exist.</p>
     </div>
   );
 }
 
 function Router() {
   return (
-    // Keep a shared shell (sidebar, navbar) outside the boundary so it
-    // survives a page crash.
-    <RoutedErrorBoundary>
-      <Switch>
-        <Route path="/" component={Home} />
-        <Route component={NotFound} />
-      </Switch>
-    </RoutedErrorBoundary>
+    <Layout>
+      <RoutedErrorBoundary>
+        <Switch>
+          <Route path="/" component={OrderList} />
+          <Route path="/orders/new" component={OrderForm} />
+          <Route path="/orders/:orderNumber" component={OrderDetail} />
+          <Route path="/api-docs" component={ApiDocs} />
+          <Route component={NotFound} />
+        </Switch>
+      </RoutedErrorBoundary>
+    </Layout>
   );
 }
 
@@ -49,12 +51,10 @@ function RoutedErrorBoundary({ children }: { children: ReactNode }) {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, '')}>
-          <Router />
-        </WouterRouter>
-        <Toaster />
-      </TooltipProvider>
+      <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, '')}>
+        <Router />
+      </WouterRouter>
+      <Toaster />
     </QueryClientProvider>
   );
 }

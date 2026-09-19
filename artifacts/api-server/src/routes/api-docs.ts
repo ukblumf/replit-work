@@ -6,10 +6,10 @@ router.get("/openapi.json", (_req, res) => {
   res.json({
     openapi: "3.1.0",
     info: {
-      title: "Stock Control API",
+      title: "Stock Control and Ordering API",
       version: "0.1.0",
       description:
-        "JSON API for listing, retrieving, creating, updating and deleting stock items.",
+        "Authenticated JSON API for stock items and purchase orders with order lines.",
     },
     servers: [{ url: "/api" }],
     security: [{ bearerAuth: [] }],
@@ -34,6 +34,21 @@ router.get("/openapi.json", (_req, res) => {
         get: { summary: "Retrieve a stock item" },
         patch: { summary: "Update a stock item" },
         delete: { summary: "Delete a stock item" },
+      },
+      "/orders": {
+        get: {
+          summary: "List orders",
+          parameters: ["orderNumber", "partNumber"],
+        },
+        post: { summary: "Create an order with lines" },
+      },
+      "/orders/summary": {
+        get: { summary: "Get order totals and status counts" },
+      },
+      "/orders/{orderNumber}": {
+        get: { summary: "Retrieve an order and its lines" },
+        patch: { summary: "Update an order and its lines" },
+        delete: { summary: "Delete an order" },
       },
     },
   });
