@@ -6,6 +6,9 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface HealthStatus {
-  status: string;
-}
+export type ListStockItemsParams = {
+/**
+ * Case-insensitive partial match on Part Number.
+ */
+partNumber?: string;
+};

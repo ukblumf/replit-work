@@ -3,13 +3,17 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Authenticated stock control API. Send the API key as a Bearer token in the Authorization header.
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: stock
+    description: Stock inventory operations
+security:
+  - bearerAuth: []
 paths:
   /healthz:
     get:
@@ -24,7 +28,163 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /stock:
+    get:
+      operationId: listStockItems
+      tags: [stock]
+      summary: List stock items
+      description: Returns all stock items, optionally filtered by part number.
+      parameters:
+        - name: partNumber
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Case-insensitive partial match on Part Number.
+      responses:
+        "200":
+          description: Stock items
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/StockItem"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      operationId: createStockItem
+      tags: [stock]
+      summary: Create a stock item
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StockItemInput"
+      responses:
+        "201":
+          description: Stock item created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StockItem"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "409":
+          description: Part Number already exists
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /stock/summary:
+    get:
+      operationId: getStockSummary
+      tags: [stock]
+      summary: Get stock summary
+      description: Returns high-level inventory totals for the workspace.
+      responses:
+        "200":
+          description: Stock summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StockSummary"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /stock/{partNumber}:
+    get:
+      operationId: getStockItem
+      tags: [stock]
+      summary: Retrieve a stock item
+      parameters:
+        - $ref: "#/components/parameters/PartNumber"
+      responses:
+        "200":
+          description: Stock item
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StockItem"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      operationId: updateStockItem
+      tags: [stock]
+      summary: Update a stock item
+      parameters:
+        - $ref: "#/components/parameters/PartNumber"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StockItemUpdate"
+      responses:
+        "200":
+          description: Updated stock item
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StockItem"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      operationId: deleteStockItem
+      tags: [stock]
+      summary: Delete a stock item
+      parameters:
+        - $ref: "#/components/parameters/PartNumber"
+      responses:
+        "204":
+          description: Stock item deleted
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: API key
+      description: Use the configured STOCK_API_KEY (or SESSION_SECRET in development) as the bearer token.
+  parameters:
+    PartNumber:
+      name: partNumber
+      in: path
+      required: true
+      schema:
+        type: string
+        minLength: 1
+      description: The unique Part Number.
+  responses:
+    Unauthorized:
+      description: Missing or invalid API key
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    BadRequest:
+      description: Invalid request
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    NotFound:
+      description: Stock item not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
   schemas:
     HealthStatus:
       type: object
@@ -33,4 +193,118 @@ components:
           type: string
       required:
         - status
+    StockItem:
+      type: object
+      properties:
+        partNumber:
+          type: string
+        itemName:
+          type: string
+        description:
+          type: string
+        quantity:
+          type: integer
+          minimum: 0
+        cost:
+          type: number
+          minimum: 0
+        retailPrice:
+          type: number
+          minimum: 0
+        binNumber:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - partNumber
+        - itemName
+        - description
+        - quantity
+        - cost
+        - retailPrice
+        - binNumber
+        - createdAt
+        - updatedAt
+    StockItemInput:
+      type: object
+      properties:
+        partNumber:
+          type: string
+          minLength: 1
+        itemName:
+          type: string
+          minLength: 1
+        description:
+          type: string
+        quantity:
+          type: integer
+          minimum: 0
+        cost:
+          type: number
+          minimum: 0
+        retailPrice:
+          type: number
+          minimum: 0
+        binNumber:
+          type: string
+          minLength: 1
+      required:
+        - partNumber
+        - itemName
+        - description
+        - quantity
+        - cost
+        - retailPrice
+        - binNumber
+    StockItemUpdate:
+      type: object
+      properties:
+        itemName:
+          type: string
+          minLength: 1
+        description:
+          type: string
+        quantity:
+          type: integer
+          minimum: 0
+        cost:
+          type: number
+          minimum: 0
+        retailPrice:
+          type: number
+          minimum: 0
+        binNumber:
+          type: string
+          minLength: 1
+      minProperties: 1
+    StockSummary:
+      type: object
+      properties:
+        itemCount:
+          type: integer
+        totalUnits:
+          type: integer
+        inventoryCost:
+          type: number
+        inventoryRetailValue:
+          type: number
+        lowStockCount:
+          type: integer
+      required:
+        - itemCount
+        - totalUnits
+        - inventoryCost
+        - inventoryRetailValue
+        - lowStockCount
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+        - error
 

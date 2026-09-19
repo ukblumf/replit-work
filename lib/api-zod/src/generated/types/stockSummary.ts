@@ -6,6 +6,10 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface HealthStatus {
-  status: string;
+export interface StockSummary {
+  itemCount: number;
+  totalUnits: number;
+  inventoryCost: number;
+  inventoryRetailValue: number;
+  lowStockCount: number;
 }

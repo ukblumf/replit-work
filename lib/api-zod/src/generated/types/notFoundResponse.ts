@@ -5,7 +5,9 @@
  * Authenticated stock control API. Send the API key as a Bearer token in the Authorization header.
  * OpenAPI spec version: 0.1.0
  */
+import type { Error } from './error';
 
-export interface HealthStatus {
-  status: string;
-}
+/**
+ * Stock item not found
+ */
+export type NotFoundResponse = Error;
