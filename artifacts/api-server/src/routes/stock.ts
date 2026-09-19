@@ -18,7 +18,10 @@ import { stockApiAuth } from "../middlewares/stock-api-auth";
 
 const router: IRouter = Router();
 
-router.use("/stock", stockApiAuth);
+router.use("/stock", stockApiAuth, (_req, res, next) => {
+  res.set("Cache-Control", "no-store");
+  next();
+});
 
 router.get("/stock", async (req, res): Promise<void> => {
   const query = ListStockItemsQueryParams.safeParse(req.query);
