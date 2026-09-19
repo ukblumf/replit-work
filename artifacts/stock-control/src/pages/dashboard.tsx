@@ -1,14 +1,12 @@
 import { useState } from 'react';
 import { Link } from 'wouter';
 import { 
-  useGetStockSummary, 
   useListStockItems, 
   useCreateStockItem,
-  getListStockItemsQueryKey,
-  getGetStockSummaryQueryKey
+  getListStockItemsQueryKey
 } from '@workspace/api-client-react';
 import { useQueryClient } from '@tanstack/react-query';
-import { Search, Plus, Package, DollarSign, Hash, ArrowRight, Loader2 } from 'lucide-react';
+import { Search, Plus, Package, ArrowRight, Loader2 } from 'lucide-react';
 import { Button, Input, Card, CardContent, CardHeader, CardTitle, Badge, Modal, Label } from '@/components/ui-elements';
 import { useDebounce } from '@/hooks/use-debounce';
 import { useToast } from '@/hooks/use-toast';
@@ -21,7 +19,6 @@ export default function Dashboard() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: summary, isLoading: isSummaryLoading } = useGetStockSummary();
   const { data: items, isLoading: isItemsLoading } = useListStockItems(
     debouncedSearch ? { partNumber: debouncedSearch } : undefined
   );
@@ -46,7 +43,6 @@ export default function Dashboard() {
         toast({ title: "Item created successfully" });
         setIsAddModalOpen(false);
         queryClient.invalidateQueries({ queryKey: getListStockItemsQueryKey() });
-        queryClient.invalidateQueries({ queryKey: getGetStockSummaryQueryKey() });
       },
       onError: (err) => {
         toast({ 
@@ -69,27 +65,6 @@ export default function Dashboard() {
           <Plus size={18} strokeWidth={3} />
           <span>RECEIVE NEW PART</span>
         </Button>
-      </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        <SummaryCard 
-          title="Unique Parts" 
-          value={summary?.itemCount} 
-          icon={Hash} 
-          loading={isSummaryLoading} 
-        />
-        <SummaryCard 
-          title="Total Units" 
-          value={summary?.totalUnits} 
-          icon={Package} 
-          loading={isSummaryLoading} 
-        />
-        <SummaryCard 
-          title="Inventory Cost" 
-          value={summary ? `£${summary.inventoryCost.toFixed(2)}` : undefined} 
-          icon={DollarSign} 
-          loading={isSummaryLoading} 
-        />
       </div>
 
       <Card className="shadow-md">
@@ -219,26 +194,3 @@ export default function Dashboard() {
   );
 }
 
-function SummaryCard({ title, value, icon: Icon, loading, alert }: any) {
-  return (
-    <Card className={cn(
-      "border-2 transition-all duration-300",
-      alert ? "border-destructive/50 bg-destructive/5" : "border-border hover:border-primary/50"
-    )}>
-      <CardContent className="p-5 flex items-center gap-4">
-        <div className={cn(
-          "p-3 rounded-sm border-2",
-          alert ? "bg-destructive/10 border-destructive text-destructive" : "bg-primary/10 border-primary/20 text-primary"
-        )}>
-          <Icon size={24} strokeWidth={2.5} />
-        </div>
-        <div>
-          <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">{title}</p>
-          <div className="text-2xl font-black font-mono mt-1 text-foreground">
-            {loading ? <div className="h-8 w-16 bg-muted animate-pulse rounded-sm" /> : value ?? '-'}
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
