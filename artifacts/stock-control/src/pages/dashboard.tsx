@@ -8,7 +8,7 @@ import {
   getGetStockSummaryQueryKey
 } from '@workspace/api-client-react';
 import { useQueryClient } from '@tanstack/react-query';
-import { Search, Plus, Package, DollarSign, AlertTriangle, Hash, ArrowRight, Loader2 } from 'lucide-react';
+import { Search, Plus, Package, DollarSign, Hash, ArrowRight, Loader2 } from 'lucide-react';
 import { Button, Input, Card, CardContent, CardHeader, CardTitle, Badge, Modal, Label } from '@/components/ui-elements';
 import { useDebounce } from '@/hooks/use-debounce';
 import { useToast } from '@/hooks/use-toast';
@@ -71,7 +71,7 @@ export default function Dashboard() {
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         <SummaryCard 
           title="Unique Parts" 
           value={summary?.itemCount} 
@@ -86,16 +86,9 @@ export default function Dashboard() {
         />
         <SummaryCard 
           title="Inventory Cost" 
-          value={summary ? `$${summary.inventoryCost.toFixed(2)}` : undefined} 
+          value={summary ? `£${summary.inventoryCost.toFixed(2)}` : undefined} 
           icon={DollarSign} 
           loading={isSummaryLoading} 
-        />
-        <SummaryCard 
-          title="Low Stock Alerts" 
-          value={summary?.lowStockCount} 
-          icon={AlertTriangle} 
-          loading={isSummaryLoading} 
-          alert={summary && summary.lowStockCount > 0}
         />
       </div>
 
@@ -160,7 +153,7 @@ export default function Dashboard() {
                           {item.quantity}
                         </span>
                       </td>
-                      <td className="px-6 py-3 text-right font-mono">${item.cost.toFixed(2)}</td>
+                      <td className="px-6 py-3 text-right font-mono">£{item.cost.toFixed(2)}</td>
                       <td className="px-6 py-3 text-center">
                         <Link href={`/stock/${item.partNumber}`} className="inline-flex items-center justify-center p-2 rounded-sm text-muted-foreground hover:bg-primary hover:text-primary-foreground transition-colors group-hover:opacity-100 opacity-50 sm:opacity-100">
                           <ArrowRight size={16} strokeWidth={3} />
@@ -205,11 +198,11 @@ export default function Dashboard() {
             </div>
             <div className="space-y-2 col-span-2 sm:col-span-1"></div>
             <div className="space-y-2 col-span-2 sm:col-span-1">
-              <Label htmlFor="cost">Unit Cost ($)</Label>
+              <Label htmlFor="cost">Unit Cost (£)</Label>
               <Input id="cost" name="cost" type="number" step="0.01" min="0" required defaultValue="0.00" />
             </div>
             <div className="space-y-2 col-span-2 sm:col-span-1">
-              <Label htmlFor="retailPrice">Retail Price ($)</Label>
+              <Label htmlFor="retailPrice">Retail Price (£)</Label>
               <Input id="retailPrice" name="retailPrice" type="number" step="0.01" min="0" required defaultValue="0.00" />
             </div>
           </div>

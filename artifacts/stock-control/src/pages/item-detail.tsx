@@ -226,11 +226,11 @@ export default function ItemDetail() {
               {isEditing ? (
                 <div className="space-y-4">
                   <div className="space-y-2">
-                    <Label>Unit Cost ($)</Label>
+                    <Label>Unit Cost (£)</Label>
                     <Input type="number" step="0.01" min="0" value={formData.cost} onChange={e => setFormData(f => ({...f, cost: Number(e.target.value)}))} />
                   </div>
                   <div className="space-y-2">
-                    <Label>Retail Price ($)</Label>
+                    <Label>Retail Price (£)</Label>
                     <Input type="number" step="0.01" min="0" value={formData.retailPrice} onChange={e => setFormData(f => ({...f, retailPrice: Number(e.target.value)}))} />
                   </div>
                 </div>
@@ -238,11 +238,11 @@ export default function ItemDetail() {
                 <div className="space-y-4">
                   <div className="flex justify-between items-center border-b-2 border-border/50 pb-3">
                     <Label className="text-muted-foreground">Unit Cost</Label>
-                    <span className="font-mono font-bold text-lg">${item.cost.toFixed(2)}</span>
+                    <span className="font-mono font-bold text-lg">£{item.cost.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between items-center border-b-2 border-border/50 pb-3">
                     <Label className="text-muted-foreground">Retail Price</Label>
-                    <span className="font-mono font-bold text-lg">${item.retailPrice.toFixed(2)}</span>
+                    <span className="font-mono font-bold text-lg">£{item.retailPrice.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between items-center pt-1">
                     <Label className="text-muted-foreground">Margin</Label>
