@@ -17,7 +17,7 @@ export interface StockPickerProps {
 export function StockPicker({ value, onChange, items, disabled }: StockPickerProps) {
   return (
     <Select
-      value={value || undefined}
+      value={value ?? ""}
       onValueChange={(partNumber) => {
         const item = items.find((stockItem) => stockItem.partNumber === partNumber);
         if (item) {

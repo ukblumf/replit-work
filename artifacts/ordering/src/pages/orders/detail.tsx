@@ -58,7 +58,7 @@ export default function OrderDetail() {
     if (order) {
       setOrderDate(order.orderDate.split("T")[0]);
       setSupplierName(order.supplierName);
-      setStatus(order.status as OrderUpdateStatus);
+      setStatus((order.status as OrderUpdateStatus) || "Draft");
       setLines(order.lines.map(l => ({
         lineNumber: l.lineNumber,
         partNumber: l.partNumber,
@@ -112,12 +112,15 @@ export default function OrderDetail() {
       return;
     }
 
+    const savedStatus =
+      status || (order?.status as OrderUpdateStatus) || "Draft";
+
     updateOrder.mutate({
       orderNumber,
       data: {
         orderDate: new Date(orderDate).toISOString(),
         supplierName,
-        status,
+        status: savedStatus,
         lines: validLines
       }
     }, {
@@ -246,7 +249,11 @@ export default function OrderDetail() {
           <CardContent className="space-y-6">
             <div className="space-y-2">
               <Label>Status</Label>
-              <Select value={status} onValueChange={(v) => setStatus(v as OrderUpdateStatus)} disabled={isReadOnly}>
+              <Select
+                value={status || (order?.status as OrderUpdateStatus) || "Draft"}
+                onValueChange={(v) => setStatus(v as OrderUpdateStatus)}
+                disabled={isReadOnly}
+              >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
