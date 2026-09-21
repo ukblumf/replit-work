@@ -11,7 +11,6 @@
 - [x] Merge `feat/job-manager` to main after testing
 - [-] Same-origin auth bypass: deliberately left as-is for the POC (UIs depend on it). Job Manager and n8n should still send a Bearer key. Revisit before any client demo (options: server-side key injection/proxy, or a key in the UIs)
 - [x] Serve the real OpenAPI documents from `/api/openapi.json` and `/jobs-api/openapi.json` for n8n import
-- [ ] Idempotency (job id + part) so retried requests cannot double-book stock
 
 ## Future Phases
 - [ ] n8n example workflows against the three apps
