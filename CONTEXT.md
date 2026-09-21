@@ -17,6 +17,7 @@ Proof-of-concept apps built to show that automation services such as n8n can dri
 - `artifacts/job-manager/` - Job Manager UI (served at `/jobs/`, port 21133); same theme and UI kit as Ordering
 - `artifacts/jobs-api/` - Job Manager API (served at `/jobs-api`, port 21146); own Drizzle schema `jobs.*` created at startup, never imports `@workspace/db`
 - `n8n/` - importable n8n example workflows (create job, low-stock alert, receive order) plus README; set `baseUrl` and `apiKey` in each Config node
+- `artifacts/service-manager/` - Service Manager home page (served at `/`, port 18977); static launcher with cards linking to `/stock-control/`, `/ordering/` and `/jobs/`; no API or database. Stock Control, Ordering and Job Manager layouts link back to it. Screenshots of UI iterations live in `screenshots/`
 - `artifacts/mockup-sandbox/` - UI mockup sandbox
 - `lib/api-spec/openapi.yaml` - Stock/Ordering API contract; `jobs-openapi.yaml` - Job Manager API contract (source of truth for codegen; `pnpm --filter @workspace/api-spec run codegen` regenerates all four libs and also writes `src/generated/openapi.json` into api-server and jobs-api via `lib/api-spec/build-openapi-json.mjs`; these JSON files are committed and served by `GET /openapi.json`)
 - `lib/api-zod/`, `lib/api-client-react/` - generated from `openapi.yaml`
