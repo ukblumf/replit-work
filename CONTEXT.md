@@ -17,7 +17,7 @@ Proof-of-concept apps built to show that automation services such as n8n can dri
 - `artifacts/job-manager/` - Job Manager UI (served at `/jobs/`, port 21133); same theme and UI kit as Ordering
 - `artifacts/jobs-api/` - Job Manager API (served at `/jobs-api`, port 21146); own Drizzle schema `jobs.*` created at startup, never imports `@workspace/db`
 - `artifacts/mockup-sandbox/` - UI mockup sandbox
-- `lib/api-spec/openapi.yaml` - Stock/Ordering API contract; `jobs-openapi.yaml` - Job Manager API contract (source of truth for codegen; `pnpm --filter @workspace/api-spec run codegen` regenerates all four libs)
+- `lib/api-spec/openapi.yaml` - Stock/Ordering API contract; `jobs-openapi.yaml` - Job Manager API contract (source of truth for codegen; `pnpm --filter @workspace/api-spec run codegen` regenerates all four libs and also writes `src/generated/openapi.json` into api-server and jobs-api via `lib/api-spec/build-openapi-json.mjs`; these JSON files are committed and served by `GET /openapi.json`)
 - `lib/api-zod/`, `lib/api-client-react/` - generated from `openapi.yaml`
 - `lib/jobs-api-zod/`, `lib/jobs-api-client-react/` - generated from `jobs-openapi.yaml`
 - `lib/db/src/schema/` - Drizzle tables (`stock-items.ts`, `orders.ts`)
@@ -25,13 +25,13 @@ Proof-of-concept apps built to show that automation services such as n8n can dri
 ## API (all under `/api`)
 - `GET/POST /stock`, `GET /stock/summary`, `GET/PATCH/DELETE /stock/:partNumber`, `POST /stock/:partNumber/adjust` (atomic `quantityDelta`; 409 `{error, available}` if it would go below zero)
 - `GET/POST /orders` (`?reference=` filter; `orderNumber` optional on POST, server generates `PO-nnnn`), `GET /orders/summary`, `GET/PATCH/DELETE /order/:orderNumber` (note singular `/order/` for single items), `POST /order/:orderNumber/lines` (append a line to a Draft order; adds to quantity if the part is already on it; 409 if not Draft)
-- `GET /healthz`, `GET /openapi.json`
+- `GET /healthz`, `GET /openapi.json` (public; the real contract from `openapi.yaml`, with `servers` set to the request's absolute URL for n8n import)
 - Auth: `Authorization: Bearer <key>`; key is `STOCK_API_KEY`, falling back to `SESSION_SECRET`.
 - Setting an order to `Received` via `PATCH /order/:orderNumber` adds each line's quantity to matching stock items in the same transaction (only on the transition into Received; lines with unknown part numbers are skipped). The Ordering UI asks for confirmation first.
 - Errors are `{ "error": string }`; 400 validation, 401 auth, 404 missing, 409 duplicate key.
 
 ## Job Manager API (all under `/jobs-api`)
-- `GET/POST /jobs` (Job Id `JOB-0001`... generated from a Postgres sequence), `GET/PATCH/DELETE /jobs/:jobId` (delete is 409 while the job has parts), `GET /parts` (proxy of Stock `GET /api/stock`), `POST /jobs/:jobId/parts` `{partNumber, quantity}`, `DELETE /jobs/:jobId/parts/:partNumber`, `GET /healthz`
+- `GET/POST /jobs` (Job Id `JOB-0001`... generated from a Postgres sequence), `GET/PATCH/DELETE /jobs/:jobId` (delete is 409 while the job has parts), `GET /parts` (proxy of Stock `GET /api/stock`), `POST /jobs/:jobId/parts` `{partNumber, quantity}`, `DELETE /jobs/:jobId/parts/:partNumber`, `GET /healthz`, `GET /openapi.json` (public, generated from `jobs-openapi.yaml`)
 - Add part: reads the stock item, takes `min(qty, available)` via Stock `POST /stock/:partNumber/adjust` (one retry if another caller wins a race), puts any shortfall on the Draft order whose `reference` is the job id (creating it, or appending via `POST /order/:n/lines`) at the stock item's cost. Adding the same part again accumulates. If the order step fails the taken stock is returned and the API answers 502.
 - Remove part: returns the allocated quantity to stock. Quantity already on a Draft order stays there (edit it in Ordering).
 - Auth: same pattern as the stock API (Bearer `JOBS_API_KEY`, falling back to `STOCK_API_KEY`/`SESSION_SECRET`; same-origin browser requests allowed).
@@ -48,13 +48,12 @@ Proof-of-concept apps built to show that automation services such as n8n can dri
 ## Current Status
 - Status: In Progress (POC). Job Manager is built, typechecks, and has been tested end to end in the running apps (manual test by the user, all good).
 - Current branch: `main` (Job Manager merged; remote is github.com/ukblumf/replit-work)
-- Next: see ROADMAP.md (real OpenAPI docs for n8n, idempotency, n8n workflows)
+- Next: see ROADMAP.md (idempotency, n8n workflows)
 
 ## Known Issues
 - Auth bypass (accepted for the POC): `stockApiAuth` skips the API key when `Origin` matches `Host` or `Sec-Fetch-Site` is `same-origin`. Both headers can be forged by any non-browser client, so the API is effectively open. The UIs send no key and depend on this, so removing it breaks them. Decision: leave as-is while this is a private demo; revisit before showing to a client.
 - `PATCH /stock/:partNumber` sets an absolute quantity and can lose concurrent updates; use `POST /stock/:partNumber/adjust` for quantity changes.
 - `PATCH /order/:orderNumber` with `lines` deletes and re-inserts all lines; use `POST /order/:orderNumber/lines` to add to an order.
-- `GET /openapi.json` is hand-written in `api-docs.ts` (e.g. `parameters: ["partNumber"]`), not generated from `openapi.yaml`, so it is not valid OpenAPI for n8n import.
 - The Job Manager API uses the same forgeable same-origin rule, so it is equally open for the POC.
 - Removing a job part does not reduce the quantity already on its Draft order.
 - Low-stock threshold is hardcoded to 5 in the stock summary query.

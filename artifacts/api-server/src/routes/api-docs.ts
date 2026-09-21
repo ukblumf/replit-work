@@ -1,62 +1,19 @@
 import { Router, type IRouter } from "express";
+import spec from "../generated/openapi.json";
 
 const router: IRouter = Router();
 
-router.get("/openapi.json", (_req, res) => {
+// Serves the real OpenAPI contract (generated from lib/api-spec/openapi.yaml by codegen).
+// `servers` is made absolute from the request so tools such as n8n can import it directly.
+router.get("/openapi.json", (req, res) => {
+  // Behind the Replit proxy the public scheme arrives in X-Forwarded-Proto.
+  const proto = req.get("x-forwarded-proto")?.split(",")[0] ?? req.protocol;
+  const base = `${proto}://${req.get("host")}${req.baseUrl}`;
+  // The YAML title stays "Api" for codegen; give importers a readable name.
   res.json({
-    openapi: "3.1.0",
-    info: {
-      title: "Stock Control and Ordering API",
-      version: "0.1.0",
-      description:
-        "Authenticated JSON API for stock items and purchase orders with order lines.",
-    },
-    servers: [{ url: "/api" }],
-    security: [{ bearerAuth: [] }],
-    components: {
-      securitySchemes: {
-        bearerAuth: {
-          type: "http",
-          scheme: "bearer",
-          bearerFormat: "API key",
-        },
-      },
-    },
-    paths: {
-      "/stock": {
-        get: { summary: "List stock items", parameters: ["partNumber"] },
-        post: { summary: "Create a stock item" },
-      },
-      "/stock/summary": {
-        get: { summary: "Get inventory totals" },
-      },
-      "/stock/{partNumber}": {
-        get: { summary: "Retrieve a stock item" },
-        patch: { summary: "Update a stock item" },
-        delete: { summary: "Delete a stock item" },
-      },
-      "/stock/{partNumber}/adjust": {
-        post: { summary: "Atomically adjust a stock quantity (409 if insufficient)" },
-      },
-      "/orders": {
-        get: {
-          summary: "List orders",
-          parameters: ["orderNumber", "partNumber", "reference"],
-        },
-        post: { summary: "Create an order with lines (order number optional; generated if omitted)" },
-      },
-      "/orders/summary": {
-        get: { summary: "Get order totals and status counts" },
-      },
-      "/order/{orderNumber}": {
-        get: { summary: "Retrieve an order and its lines" },
-        patch: { summary: "Update an order and its lines" },
-        delete: { summary: "Delete an order" },
-      },
-      "/order/{orderNumber}/lines": {
-        post: { summary: "Add a line to a Draft order (409 if not Draft)" },
-      },
-    },
+    ...spec,
+    info: { ...spec.info, title: "Stock Control and Ordering API" },
+    servers: [{ url: base, description: "This server" }],
   });
 });
 
