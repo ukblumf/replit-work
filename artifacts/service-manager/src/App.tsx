@@ -41,10 +41,6 @@ function Home() {
 
         <section className="flex flex-1 flex-col justify-center pb-12 pt-16 sm:pb-16 sm:pt-24 lg:pt-28">
           <div className="service-reveal max-w-3xl">
-            <p className="mb-5 flex items-center gap-3 font-mono text-[0.68rem] font-bold uppercase tracking-[0.18em] text-[hsl(var(--accent))]">
-              <span className="h-px w-8 bg-[hsl(var(--accent))]" />
-              One home base for the workday
-            </p>
             <h1 className="max-w-4xl text-[clamp(3.2rem,8vw,7.4rem)] font-semibold leading-[0.89] tracking-[-0.075em] text-[hsl(var(--primary))]">
               The work
               <br />
