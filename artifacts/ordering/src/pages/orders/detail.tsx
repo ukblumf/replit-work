@@ -355,7 +355,7 @@ export default function OrderDetail() {
                 <div className="sm:col-span-2">
                   <div className="sm:hidden text-xs font-medium text-muted-foreground mb-1">Unit Price</div>
                   <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">$</span>
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">£</span>
                     <Input
                       type="number"
                       step="0.01"
