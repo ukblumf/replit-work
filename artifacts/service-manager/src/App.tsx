@@ -40,7 +40,7 @@ function Home() {
         </header>
 
         <section className="flex flex-1 flex-col justify-center pb-12 pt-16 sm:pb-16 sm:pt-24 lg:pt-28">
-          <div className="grid w-full gap-4 md:grid-cols-3">
+          <div className="grid w-full -translate-y-16 gap-4 sm:-translate-y-24 lg:-translate-y-32 md:grid-cols-3">
             <ServiceCard
               className="service-reveal service-reveal-delay-1"
               icon={<Boxes className="h-6 w-6" strokeWidth={1.8} />}
