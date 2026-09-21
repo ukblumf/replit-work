@@ -16,6 +16,7 @@ Proof-of-concept apps built to show that automation services such as n8n can dri
 - `artifacts/ordering/` - Ordering UI (served at `/ordering/`)
 - `artifacts/job-manager/` - Job Manager UI (served at `/jobs/`, port 21133); same theme and UI kit as Ordering
 - `artifacts/jobs-api/` - Job Manager API (served at `/jobs-api`, port 21146); own Drizzle schema `jobs.*` created at startup, never imports `@workspace/db`
+- `n8n/` - importable n8n example workflows (create job, low-stock alert, receive order) plus README; set `baseUrl` and `apiKey` in each Config node
 - `artifacts/mockup-sandbox/` - UI mockup sandbox
 - `lib/api-spec/openapi.yaml` - Stock/Ordering API contract; `jobs-openapi.yaml` - Job Manager API contract (source of truth for codegen; `pnpm --filter @workspace/api-spec run codegen` regenerates all four libs and also writes `src/generated/openapi.json` into api-server and jobs-api via `lib/api-spec/build-openapi-json.mjs`; these JSON files are committed and served by `GET /openapi.json`)
 - `lib/api-zod/`, `lib/api-client-react/` - generated from `openapi.yaml`
@@ -48,7 +49,7 @@ Proof-of-concept apps built to show that automation services such as n8n can dri
 ## Current Status
 - Status: In Progress (POC). Job Manager is built, typechecks, and has been tested end to end in the running apps (manual test by the user, all good).
 - Current branch: `main` (Job Manager merged; remote is github.com/ukblumf/replit-work)
-- Next: see ROADMAP.md (n8n workflows)
+- Next: see ROADMAP.md (test the n8n workflows in your instance; optional n8n dashboard aggregator)
 
 ## Known Issues
 - Auth bypass (accepted for the POC): `stockApiAuth` skips the API key when `Origin` matches `Host` or `Sec-Fetch-Site` is `same-origin`. Both headers can be forged by any non-browser client, so the API is effectively open. The UIs send no key and depend on this, so removing it breaks them. Decision: leave as-is while this is a private demo; revisit before showing to a client.

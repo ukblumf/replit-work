@@ -13,7 +13,9 @@
 - [x] Serve the real OpenAPI documents from `/api/openapi.json` and `/jobs-api/openapi.json` for n8n import
 
 ## Future Phases
-- [ ] n8n example workflows against the three apps
+- [x] n8n example workflows in `n8n/` (written, not yet run in a live n8n)
+- [ ] Run the n8n workflows against a live instance and fix anything n8n rejects
+- [ ] Status dashboard: n8n aggregates health and summaries into one JSON, a small page renders it (under consideration)
 
 ## Out of Scope
 - Shared database access between apps

@@ -1,0 +1,297 @@
+{
+  "name": "Stock Apps - Low stock alert",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "62df5694-ffd2-51af-9d29-278999a0ac29",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "days",
+              "triggerAtHour": 8
+            }
+          ]
+        }
+      },
+      "id": "ea6e5ae3-fefe-598e-a455-37423cf6cdd5",
+      "name": "Every Morning",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a96476f7-8bba-5921-8a97-7ba1e88aabff",
+              "name": "baseUrl",
+              "value": "https://YOUR-APP-URL",
+              "type": "string"
+            },
+            {
+              "id": "2e7aa655-4905-5605-b3d6-c1d88811b568",
+              "name": "apiKey",
+              "value": "YOUR-API-KEY",
+              "type": "string"
+            },
+            {
+              "id": "28b4ddcc-a749-5902-be69-5b2ffb95f677",
+              "name": "lowStockThreshold",
+              "value": 5,
+              "type": "number"
+            }
+          ]
+        },
+        "includeOtherFields": false,
+        "options": {}
+      },
+      "id": "267ed0fa-573b-5938-a83f-7fc425be868b",
+      "name": "Config",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        220,
+        300
+      ],
+      "notes": "Edit baseUrl (no trailing slash) and apiKey (STOCK_API_KEY; JOBS_API_KEY if you set one) before running. The Stock Control summary counts items at 5 or fewer as low.",
+      "notesInFlow": true
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $('Config').item.json.baseUrl }}/api/stock/summary",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "={{ 'Bearer ' + $('Config').item.json.apiKey }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "0c2d08c0-26b1-5cba-a767-58fe001f7da5",
+      "name": "Stock Summary",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        440,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $('Config').item.json.baseUrl }}/api/stock",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "={{ 'Bearer ' + $('Config').item.json.apiKey }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "d7483115-0439-5c02-9703-390045933a97",
+      "name": "List Stock",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        660,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const threshold = $('Config').first().json.lowStockThreshold;\nconst items = $input.all().map(i => i.json).filter(s => s.quantity <= threshold);\nreturn [{ json: { count: items.length, items, summary: $('Stock Summary').first().json } }];"
+      },
+      "id": "c394eb7e-4d2a-5efa-ac63-ef76cdead41c",
+      "name": "Find Low Stock",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        880,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "45694b71-483e-506c-8b46-2cc45e2046b9",
+              "leftValue": "={{ $json.count }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "caee415e-c599-5c79-8514-0e6313e2093d",
+      "name": "Any Low Stock?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1100,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "74564648-d674-55c5-8ada-8c9d768c1497",
+              "name": "message",
+              "type": "string",
+              "value": "={{ $json.count + ' part(s) at or below ' + $('Config').item.json.lowStockThreshold + ': ' + $json.items.map(i => i.partNumber + ' (' + i.quantity + ' in bin ' + i.binNumber + ')').join(', ') }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "6663fcbf-89d6-5cc2-bc85-696bd4e77f33",
+      "name": "Alert Message",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1320,
+        200
+      ],
+      "notes": "Replace or follow this node with Slack, Email, Telegram, etc. to send the message.",
+      "notesInFlow": true
+    },
+    {
+      "parameters": {},
+      "id": "a940ec9c-54f0-52de-9bbc-2ff0224b0a6a",
+      "name": "All Stocked",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        1320,
+        420
+      ]
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Every Morning": {
+      "main": [
+        [
+          {
+            "node": "Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Config": {
+      "main": [
+        [
+          {
+            "node": "Stock Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Stock Summary": {
+      "main": [
+        [
+          {
+            "node": "List Stock",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "List Stock": {
+      "main": [
+        [
+          {
+            "node": "Find Low Stock",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find Low Stock": {
+      "main": [
+        [
+          {
+            "node": "Any Low Stock?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Any Low Stock?": {
+      "main": [
+        [
+          {
+            "node": "Alert Message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "All Stocked",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "tags": []
+}
