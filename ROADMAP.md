@@ -11,7 +11,7 @@
 - [ ] Prerequisites in the API (see below)
 
 ### Suggested API prerequisites
-- [ ] Fix or replace the same-origin auth bypass so Job Manager and n8n must send a Bearer key
+- [-] Same-origin auth bypass: deliberately left as-is for the POC (UIs depend on it). Job Manager and n8n should still send a Bearer key. Revisit before any client demo (options: server-side key injection/proxy, or a key in the UIs)
 - [x] Atomic stock adjustment: `POST /stock/:partNumber/adjust` (branch `feat/stock-adjust`) rejects going below zero, avoiding read-modify-write races
 - [ ] Server-generated order numbers, or a documented scheme, to avoid 409 collisions
 - [ ] Way to add lines to an existing Draft order, and a job reference on orders for traceability

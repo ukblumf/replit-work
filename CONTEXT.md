@@ -37,7 +37,7 @@ Proof-of-concept apps (Stock Control, Ordering) sharing one REST API, built to s
 - Next: Job Manager app (see ROADMAP.md)
 
 ## Known Issues
-- Auth bypass: `stockApiAuth` skips the API key when `Origin` matches `Host` or `Sec-Fetch-Site` is `same-origin`. Both headers can be forged by any non-browser client, so the API is effectively open.
+- Auth bypass (accepted for the POC): `stockApiAuth` skips the API key when `Origin` matches `Host` or `Sec-Fetch-Site` is `same-origin`. Both headers can be forged by any non-browser client, so the API is effectively open. The UIs send no key and depend on this, so removing it breaks them. Decision: leave as-is while this is a private demo; revisit before showing to a client.
 - `PATCH /stock/:partNumber` sets an absolute quantity and can lose concurrent updates; use `POST /stock/:partNumber/adjust` for quantity changes.
 - `PATCH /order/:orderNumber` with `lines` deletes and re-inserts all lines; there is no add-line endpoint.
 - `GET /openapi.json` is hand-written in `api-docs.ts` (e.g. `parameters: ["partNumber"]`), not generated from `openapi.yaml`, so it is not valid OpenAPI for n8n import.
