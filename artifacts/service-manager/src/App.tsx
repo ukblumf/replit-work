@@ -40,15 +40,7 @@ function Home() {
         </header>
 
         <section className="flex flex-1 flex-col justify-center pb-12 pt-16 sm:pb-16 sm:pt-24 lg:pt-28">
-          <div className="service-reveal max-w-3xl">
-            <h1 className="max-w-4xl text-[clamp(3.2rem,8vw,7.4rem)] font-semibold leading-[0.89] tracking-[-0.075em] text-[hsl(var(--primary))]">
-              The work
-              <br />
-              starts here<span className="text-[hsl(var(--accent))]">.</span>
-            </h1>
-          </div>
-
-          <div className="mt-14 grid gap-4 md:grid-cols-3 lg:mt-20">
+          <div className="grid w-full gap-4 md:grid-cols-3">
             <ServiceCard
               className="service-reveal service-reveal-delay-1"
               icon={<Boxes className="h-6 w-6" strokeWidth={1.8} />}
