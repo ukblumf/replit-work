@@ -29,9 +29,6 @@ function Home() {
               <Wrench className="h-5 w-5" strokeWidth={2.2} />
             </div>
             <div>
-              <p className="font-mono text-[0.63rem] font-bold uppercase tracking-[0.22em] text-[hsl(var(--muted-foreground))]">
-                Operations / 01
-              </p>
               <p className="mt-0.5 text-lg font-semibold tracking-[-0.03em] text-[hsl(var(--primary))]">
                 Service Manager
               </p>
