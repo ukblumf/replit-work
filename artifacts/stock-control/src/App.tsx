@@ -24,6 +24,7 @@ function Router() {
       <RoutedErrorBoundary>
         <Switch>
           <Route path="/" component={Dashboard} />
+          <Route path="/new" component={Dashboard} />
           <Route path="/stock/:partNumber" component={ItemDetail} />
           <Route path="/api-reference" component={ApiReference} />
           <Route component={NotFound} />

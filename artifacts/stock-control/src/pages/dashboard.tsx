@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link } from 'wouter';
+import { Link, useLocation } from 'wouter';
 import { 
   useListStockItems, 
   useCreateStockItem,
@@ -15,7 +15,10 @@ import { cn } from '@/lib/utils';
 export default function Dashboard() {
   const [search, setSearch] = useState('');
   const debouncedSearch = useDebounce(search, 300);
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  // The New Part modal is driven by the /new route so the top nav can open it.
+  const [location, setLocation] = useLocation();
+  const isAddModalOpen = location === '/new';
+  const setIsAddModalOpen = (open: boolean) => setLocation(open ? '/new' : '/');
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
