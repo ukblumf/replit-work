@@ -12,7 +12,7 @@ import {
   UpdateOrderParams,
   UpdateOrderResponse,
 } from "@workspace/api-zod";
-import { db, orderLinesTable, ordersTable } from "@workspace/db";
+import { db, orderLinesTable, ordersTable, stockItemsTable } from "@workspace/db";
 import {
   and,
   asc,
@@ -237,13 +237,17 @@ router.patch("/order/:orderNumber", async (req, res): Promise<void> => {
   }
 
   const [existing] = await db
-    .select({ orderNumber: ordersTable.orderNumber })
+    .select({ orderNumber: ordersTable.orderNumber, status: ordersTable.status })
     .from(ordersTable)
     .where(eq(ordersTable.orderNumber, params.data.orderNumber));
   if (!existing) {
     res.status(404).json({ error: "Order not found" });
     return;
   }
+
+  // Only the transition into Received books stock in; re-saving a Received order must not double count.
+  const isBeingReceived =
+    body.data.status === "Received" && existing.status !== "Received";
 
   await db.transaction(async (tx) => {
     const { lines } = body.data;
@@ -273,6 +277,26 @@ router.patch("/order/:orderNumber", async (req, res): Promise<void> => {
           ...line,
         })),
       );
+    }
+
+    if (isBeingReceived) {
+      // Add each received line quantity to stock in the same transaction as the status change.
+      // Lines whose part number is not in stock are skipped.
+      const receivedLines = await tx
+        .select({
+          partNumber: orderLinesTable.partNumber,
+          quantity: orderLinesTable.quantity,
+        })
+        .from(orderLinesTable)
+        .where(eq(orderLinesTable.orderNumber, params.data.orderNumber));
+      for (const line of receivedLines) {
+        await tx
+          .update(stockItemsTable)
+          .set({
+            quantity: sql`${stockItemsTable.quantity} + ${line.quantity}`,
+          })
+          .where(eq(stockItemsTable.partNumber, line.partNumber));
+      }
     }
   });
 

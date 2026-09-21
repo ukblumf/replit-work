@@ -6,6 +6,7 @@ import {
   useUpdateOrder, 
   useDeleteOrder,
   useListStockItems, 
+  getListStockItemsQueryKey,
   getListOrdersQueryKey,
   getGetOrderQueryKey,
   OrderUpdateStatus, 
@@ -52,6 +53,7 @@ export default function OrderDetail() {
   const [supplierName, setSupplierName] = useState("");
   const [status, setStatus] = useState<OrderUpdateStatus>("Draft");
   const [lines, setLines] = useState<OrderLineInput[]>([]);
+  const [confirmReceiveOpen, setConfirmReceiveOpen] = useState(false);
 
   // Initialize form when order loads
   useEffect(() => {
@@ -101,17 +103,31 @@ export default function OrderDetail() {
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!validate()) return;
+    // Receiving books the ordered quantities into stock, so ask first.
+    if (status === "Received" && order?.status !== "Received") {
+      setConfirmReceiveOpen(true);
+      return;
+    }
+    saveOrder();
+  };
+
+  const validate = (): boolean => {
     if (!supplierName || !orderDate) {
       toast.error("Please fill in all required header fields.");
-      return;
+      return false;
     }
 
     const validLines = lines.filter(l => l.partNumber && l.quantity > 0);
     if (validLines.length === 0) {
       toast.error("Please add at least one valid line item.");
-      return;
+      return false;
     }
+    return true;
+  };
 
+  const saveOrder = () => {
+    const validLines = lines.filter(l => l.partNumber && l.quantity > 0);
     const savedStatus =
       status || (order?.status as OrderUpdateStatus) || "Draft";
 
@@ -128,6 +144,8 @@ export default function OrderDetail() {
         toast.success(`Order ${orderNumber} updated.`);
         queryClient.invalidateQueries({ queryKey: getGetOrderQueryKey(orderNumber) });
         queryClient.invalidateQueries({ queryKey: getListOrdersQueryKey() });
+        // Received orders add to stock, so refresh the stock list used by the part pickers.
+        queryClient.invalidateQueries({ queryKey: getListStockItemsQueryKey() });
       },
       onError: (err: any) => {
         toast.error(err.error || "Failed to update order.");
@@ -167,7 +185,9 @@ export default function OrderDetail() {
     );
   }
 
-  const isReadOnly = status === "Received" || status === "Cancelled";
+  // Based on the saved status. Using the dropdown's unsaved value here disabled the whole form
+  // (including Save and the status select) as soon as "Received" was picked.
+  const isReadOnly = order.status === "Received" || order.status === "Cancelled";
 
   return (
     <form onSubmit={handleSave} className="space-y-6 max-w-5xl mx-auto pb-24">
@@ -403,6 +423,32 @@ export default function OrderDetail() {
           )}
         </CardContent>
       </Card>
+
+      <Dialog open={confirmReceiveOpen} onOpenChange={setConfirmReceiveOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Mark order {orderNumber} as received?</DialogTitle>
+            <DialogDescription>
+              The quantities on this order's lines will be added to stock. The order will then be locked and cannot be edited.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setConfirmReceiveOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              disabled={updateOrder.isPending}
+              onClick={() => {
+                setConfirmReceiveOpen(false);
+                saveOrder();
+              }}
+            >
+              Confirm Received
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </form>
   );
 }

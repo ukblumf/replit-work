@@ -24,6 +24,7 @@ Proof-of-concept apps (Stock Control, Ordering) sharing one REST API, built to s
 - `GET/POST /orders`, `GET /orders/summary`, `GET/PATCH/DELETE /order/:orderNumber` (note singular `/order/` for single items)
 - `GET /healthz`, `GET /openapi.json`
 - Auth: `Authorization: Bearer <key>`; key is `STOCK_API_KEY`, falling back to `SESSION_SECRET`.
+- Setting an order to `Received` via `PATCH /order/:orderNumber` adds each line's quantity to matching stock items in the same transaction (only on the transition into Received; lines with unknown part numbers are skipped). The Ordering UI asks for confirmation first.
 - Errors are `{ "error": string }`; 400 validation, 401 auth, 404 missing, 409 duplicate key.
 
 ## Data Model
