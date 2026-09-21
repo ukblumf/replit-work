@@ -11,6 +11,12 @@
     },
     {
       "path": "./lib/api-zod"
+    },
+    {
+      "path": "./lib/jobs-api-client-react"
+    },
+    {
+      "path": "./lib/jobs-api-zod"
     }
   ]
 }

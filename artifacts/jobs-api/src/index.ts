@@ -1,7 +1,7 @@
-import app from "./app.ts";
-import pino from "pino";
+import app from "./app";
+import { ensureSchema } from "./db";
+import { logger } from "./lib/logger";
 
-const logger = pino({ level: process.env.LOG_LEVEL ?? "info" });
 const rawPort = process.env.PORT;
 
 if (!rawPort) {
@@ -13,6 +13,8 @@ const port = Number(rawPort);
 if (Number.isNaN(port) || port <= 0) {
   throw new Error(`Invalid PORT value: "${rawPort}"`);
 }
+
+await ensureSchema();
 
 app.listen(port, (err) => {
   if (err) {
