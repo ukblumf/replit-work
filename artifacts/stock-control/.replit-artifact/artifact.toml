@@ -1,5 +1,5 @@
 kind = "web"
-previewPath = "/"
+previewPath = "/stock-control/"
 title = "Stock Control"
 description = "A focused stock control workspace for small businesses to maintain parts, quantities, pricing, and bin locations, with an authenticated JSON API for integrations."
 version = "1.0.0"
@@ -8,7 +8,7 @@ router = "path"
 
 [[services]]
 name = "web"
-paths = [ "/" ]
+paths = [ "/stock-control/" ]
 localPort = 19219
 
 [services.development]
@@ -25,4 +25,4 @@ to = "/index.html"
 
 [services.env]
 PORT = "19219"
-BASE_PATH = "/"
+BASE_PATH = "/stock-control/"

@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "Service Manager"
+description = "A single home page for opening Stock Control, Ordering, and Job Manager from one clear service menu."
+version = "1.0.0"
+id = "artifacts/service-manager"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 18977
+
+[services.development]
+run = "pnpm --filter @workspace/service-manager run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/service-manager", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/service-manager/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "18977"
+BASE_PATH = "/"

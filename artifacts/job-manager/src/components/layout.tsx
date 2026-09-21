@@ -1,6 +1,6 @@
 import { ReactNode } from "react";
 import { Link, useLocation } from "wouter";
-import { Briefcase, ClipboardList, BookOpen, Plus } from "lucide-react";
+import { Briefcase, ClipboardList, BookOpen, Home, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const NAV_ITEMS = [
@@ -44,6 +44,14 @@ export function Layout({ children }: { children: ReactNode }) {
               })}
             </nav>
           </div>
+          <a
+            href="/"
+            className="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            aria-label="Return to Service Manager"
+          >
+            <Home size={16} />
+            Service Manager
+          </a>
         </div>
       </header>
       <main className="flex-1 container mx-auto px-4 py-8">
