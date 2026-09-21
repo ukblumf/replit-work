@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/jobs/"
+title = "Job Manager"
+description = "A React/Vite web application for managing jobs, scaffolded for future development."
+version = "1.0.0"
+id = "artifacts/job-manager"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/jobs/" ]
+localPort = 21133
+
+[services.development]
+run = "pnpm --filter @workspace/job-manager run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/job-manager", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/job-manager/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "21133"
+BASE_PATH = "/jobs/"

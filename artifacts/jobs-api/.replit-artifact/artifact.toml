@@ -1,0 +1,33 @@
+kind = "web"
+previewPath = "/jobs-api"
+title = "Job Manager API"
+description = "A separate API service scaffold for the Job Manager application, currently exposing only a health check."
+version = "1.0.0"
+id = "artifacts/jobs-api"
+
+[[services]]
+localPort = 21146
+name = "API Server"
+paths = ["/jobs-api"]
+
+[services.development]
+run = "pnpm --filter @workspace/jobs-api run dev"
+
+[services.production]
+
+[services.production.build]
+args = ["pnpm", "--filter", "@workspace/jobs-api", "run", "build"]
+
+[services.production.run]
+args = ["node", "--enable-source-maps", "artifacts/jobs-api/dist/index.mjs"]
+
+[services.production.run.env]
+PORT = "21146"
+NODE_ENV = "production"
+
+[services.production.health.startup]
+path = "/jobs-api/healthz"
+
+[services.env]
+PORT = "21146"
+BASE_PATH = "/jobs-api"
