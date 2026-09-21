@@ -47,8 +47,8 @@ Proof-of-concept apps built to show that automation services such as n8n can dri
 
 ## Current Status
 - Status: In Progress (POC). Job Manager is built, typechecks, and has been tested end to end in the running apps (manual test by the user, all good).
-- Current branch: `feat/job-manager` (main is on github.com/ukblumf/replit-work)
-- Next: merge `feat/job-manager` to main (see ROADMAP.md)
+- Current branch: `main` (Job Manager merged; remote is github.com/ukblumf/replit-work)
+- Next: see ROADMAP.md (real OpenAPI docs for n8n, idempotency, n8n workflows)
 
 ## Known Issues
 - Auth bypass (accepted for the POC): `stockApiAuth` skips the API key when `Origin` matches `Host` or `Sec-Fetch-Site` is `same-origin`. Both headers can be forged by any non-browser client, so the API is effectively open. The UIs send no key and depend on this, so removing it breaks them. Decision: leave as-is while this is a private demo; revisit before showing to a client.
