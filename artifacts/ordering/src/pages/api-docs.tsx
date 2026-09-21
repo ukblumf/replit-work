@@ -80,7 +80,7 @@ export default function ApiDocs() {
           <CardHeader>
             <div className="flex items-center gap-3">
               <Badge variant="secondary" className="font-mono text-sm">GET</Badge>
-              <CardTitle className="text-lg">/api/orders/:orderNumber</CardTitle>
+              <CardTitle className="text-lg">/api/order/:orderNumber</CardTitle>
             </div>
             <CardDescription>Retrieve full details of a specific purchase order.</CardDescription>
           </CardHeader>
@@ -90,7 +90,7 @@ export default function ApiDocs() {
           <CardHeader>
             <div className="flex items-center gap-3">
               <Badge variant="accent" className="font-mono text-sm bg-amber-500 text-white">PATCH</Badge>
-              <CardTitle className="text-lg">/api/orders/:orderNumber</CardTitle>
+              <CardTitle className="text-lg">/api/order/:orderNumber</CardTitle>
             </div>
             <CardDescription>Update an existing purchase order and its lines.</CardDescription>
           </CardHeader>
@@ -105,7 +105,7 @@ export default function ApiDocs() {
           <CardHeader>
             <div className="flex items-center gap-3">
               <Badge variant="destructive" className="font-mono text-sm">DELETE</Badge>
-              <CardTitle className="text-lg">/api/orders/:orderNumber</CardTitle>
+              <CardTitle className="text-lg">/api/order/:orderNumber</CardTitle>
             </div>
             <CardDescription>Delete an order permanently.</CardDescription>
           </CardHeader>

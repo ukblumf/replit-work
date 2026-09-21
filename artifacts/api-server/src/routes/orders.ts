@@ -25,7 +25,7 @@ import { stockApiAuth } from "../middlewares/stock-api-auth";
 
 const router: IRouter = Router();
 
-router.use("/orders", stockApiAuth, (_req, res, next) => {
+router.use(["/orders", "/order"], stockApiAuth, (_req, res, next) => {
   res.set("Cache-Control", "no-store");
   next();
 });
@@ -205,7 +205,7 @@ router.get("/orders/summary", async (_req, res): Promise<void> => {
   );
 });
 
-router.get("/orders/:orderNumber", async (req, res): Promise<void> => {
+router.get("/order/:orderNumber", async (req, res): Promise<void> => {
   const params = GetOrderParams.safeParse(req.params);
   if (!params.success) {
     res.status(400).json({ error: params.error.message });
@@ -221,7 +221,7 @@ router.get("/orders/:orderNumber", async (req, res): Promise<void> => {
   res.json(GetOrderResponse.parse(order));
 });
 
-router.patch("/orders/:orderNumber", async (req, res): Promise<void> => {
+router.patch("/order/:orderNumber", async (req, res): Promise<void> => {
   const params = UpdateOrderParams.safeParse(req.params);
   const body = UpdateOrderBody.safeParse(req.body);
   if (!params.success || !body.success) {
@@ -280,7 +280,7 @@ router.patch("/orders/:orderNumber", async (req, res): Promise<void> => {
   res.json(UpdateOrderResponse.parse(updated));
 });
 
-router.delete("/orders/:orderNumber", async (req, res): Promise<void> => {
+router.delete("/order/:orderNumber", async (req, res): Promise<void> => {
   const params = DeleteOrderParams.safeParse(req.params);
   if (!params.success) {
     res.status(400).json({ error: params.error.message });

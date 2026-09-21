@@ -45,7 +45,7 @@ router.get("/openapi.json", (_req, res) => {
       "/orders/summary": {
         get: { summary: "Get order totals and status counts" },
       },
-      "/orders/{orderNumber}": {
+      "/order/{orderNumber}": {
         get: { summary: "Retrieve an order and its lines" },
         patch: { summary: "Update an order and its lines" },
         delete: { summary: "Delete an order" },

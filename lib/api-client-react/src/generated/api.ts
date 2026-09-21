@@ -890,7 +890,7 @@ export const getGetOrderUrl = (orderNumber: string,) => {
 
 
 
-  return `/api/orders/${orderNumber}`
+  return `/api/order/${orderNumber}`
 }
 
 /**
@@ -913,7 +913,7 @@ export const getOrder = async (orderNumber: string, options?: Parameters<typeof 
 
 export const getGetOrderQueryKey = (orderNumber: string,) => {
     return [
-    `/api/orders/${orderNumber}`
+    `/api/order/${orderNumber}`
     ] as const;
     }
 
@@ -967,7 +967,7 @@ export const getUpdateOrderUrl = (orderNumber: string,) => {
 
 
 
-  return `/api/orders/${orderNumber}`
+  return `/api/order/${orderNumber}`
 }
 
 /**
@@ -1056,7 +1056,7 @@ export const getDeleteOrderUrl = (orderNumber: string,) => {
 
 
 
-  return `/api/orders/${orderNumber}`
+  return `/api/order/${orderNumber}`
 }
 
 /**

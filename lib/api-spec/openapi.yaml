@@ -224,7 +224,7 @@ paths:
                 $ref: "#/components/schemas/OrderSummaryTotals"
         "401":
           $ref: "#/components/responses/Unauthorized"
-  /orders/{orderNumber}:
+  /order/{orderNumber}:
     get:
       operationId: getOrder
       tags: [orders]
