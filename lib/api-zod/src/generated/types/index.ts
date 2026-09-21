@@ -17,6 +17,7 @@ export * from './order';
 export * from './orderInput';
 export * from './orderInputStatus';
 export * from './orderLine';
+export * from './orderLineAppend';
 export * from './orderLineInput';
 export * from './orderStatus';
 export * from './orderSummary';

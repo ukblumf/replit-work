@@ -12,6 +12,8 @@ export interface OrderUpdate {
   orderDate?: Date;
   /** @minLength 1 */
   supplierName?: string;
+  /** Free-text reference to the originating record, e.g. a Job Manager job id. */
+  reference?: string;
   status?: OrderUpdateStatus;
   /** @minItems 1 */
   lines?: OrderLineInput[];

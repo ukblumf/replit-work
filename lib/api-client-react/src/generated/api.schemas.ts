@@ -98,6 +98,17 @@ export interface OrderLineInput {
   unitPrice: number;
 }
 
+export interface OrderLineAppend {
+  /** @minLength 1 */
+  partNumber: string;
+  externalPartNumber?: string;
+  description?: string;
+  /** @minimum 1 */
+  quantity: number;
+  /** @minimum 0 */
+  unitPrice: number;
+}
+
 export type OrderStatus = typeof OrderStatus[keyof typeof OrderStatus];
 
 
@@ -113,6 +124,8 @@ export interface Order {
   orderNumber: string;
   orderDate: string;
   supplierName: string;
+  /** Free-text reference to the originating record, e.g. a Job Manager job id. */
+  reference: string;
   status: OrderStatus;
   /** @minItems 1 */
   lines: OrderLine[];
@@ -135,10 +148,12 @@ export const OrderInputStatus = {
 
 export interface OrderInput {
   /** @minLength 1 */
-  orderNumber: string;
+  orderNumber?: string;
   orderDate: string;
   /** @minLength 1 */
   supplierName: string;
+  /** Free-text reference to the originating record, e.g. a Job Manager job id. */
+  reference?: string;
   status: OrderInputStatus;
   /** @minItems 1 */
   lines: OrderLineInput[];
@@ -159,6 +174,8 @@ export interface OrderUpdate {
   orderDate?: string;
   /** @minLength 1 */
   supplierName?: string;
+  /** Free-text reference to the originating record, e.g. a Job Manager job id. */
+  reference?: string;
   status?: OrderUpdateStatus;
   /** @minItems 1 */
   lines?: OrderLineInput[];
@@ -179,6 +196,8 @@ export interface OrderSummary {
   orderNumber: string;
   orderDate: string;
   supplierName: string;
+  /** Free-text reference to the originating record, e.g. a Job Manager job id. */
+  reference: string;
   status: OrderSummaryStatus;
   lineCount: number;
   /** @minimum 0 */
@@ -229,5 +248,9 @@ orderNumber?: string;
  * Case-insensitive partial match on a line Part Number.
  */
 partNumber?: string;
+/**
+ * Exact match on the order Reference (e.g. a Job Manager job id).
+ */
+reference?: string;
 };
 

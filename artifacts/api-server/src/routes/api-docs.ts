@@ -41,9 +41,9 @@ router.get("/openapi.json", (_req, res) => {
       "/orders": {
         get: {
           summary: "List orders",
-          parameters: ["orderNumber", "partNumber"],
+          parameters: ["orderNumber", "partNumber", "reference"],
         },
-        post: { summary: "Create an order with lines" },
+        post: { summary: "Create an order with lines (order number optional; generated if omitted)" },
       },
       "/orders/summary": {
         get: { summary: "Get order totals and status counts" },
@@ -52,6 +52,9 @@ router.get("/openapi.json", (_req, res) => {
         get: { summary: "Retrieve an order and its lines" },
         patch: { summary: "Update an order and its lines" },
         delete: { summary: "Delete an order" },
+      },
+      "/order/{orderNumber}/lines": {
+        post: { summary: "Add a line to a Draft order (409 if not Draft)" },
       },
     },
   });

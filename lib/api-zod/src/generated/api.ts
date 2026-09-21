@@ -241,7 +241,8 @@ export const AdjustStockQuantityResponse = zod.object({
  */
 export const ListOrdersQueryParams = zod.object({
   "orderNumber": zod.coerce.string().optional().describe('Case-insensitive partial match on Order Number.'),
-  "partNumber": zod.coerce.string().optional().describe('Case-insensitive partial match on a line Part Number.')
+  "partNumber": zod.coerce.string().optional().describe('Case-insensitive partial match on a line Part Number.'),
+  "reference": zod.coerce.string().optional().describe('Exact match on the order Reference (e.g. a Job Manager job id).')
 })
 
 export const listOrdersResponseTotalValueMin = 0;
@@ -252,6 +253,7 @@ export const ListOrdersResponseItem = zod.object({
   "orderNumber": zod.string(),
   "orderDate": zod.coerce.date(),
   "supplierName": zod.string(),
+  "reference": zod.string().describe('Free-text reference to the originating record, e.g. a Job Manager job id.'),
   "status": zod.enum(['Draft', 'Submitted', 'Confirmed', 'Received', 'Cancelled']),
   "lineCount": zod.number().int(),
   "totalValue": zod.number().min(listOrdersResponseTotalValueMin)
@@ -260,6 +262,7 @@ export const ListOrdersResponse = zod.array(ListOrdersResponseItem)
 
 
 /**
+ * If orderNumber is omitted the server generates the next PO-nnnn number.
  * @summary Create a purchase order
  */
 
@@ -273,9 +276,10 @@ export const createOrderBodyLinesItemUnitPriceMin = 0;
 
 
 export const CreateOrderBody = zod.object({
-  "orderNumber": zod.string().min(1),
+  "orderNumber": zod.string().min(1).optional(),
   "orderDate": zod.coerce.date(),
   "supplierName": zod.string().min(1),
+  "reference": zod.string().optional().describe('Free-text reference to the originating record, e.g. a Job Manager job id.'),
   "status": zod.enum(['Draft', 'Submitted', 'Confirmed', 'Received', 'Cancelled']),
   "lines": zod.array(zod.object({
   "lineNumber": zod.number().int().min(1),
@@ -300,6 +304,7 @@ export const CreateOrderResponse = zod.object({
   "orderNumber": zod.string(),
   "orderDate": zod.coerce.date(),
   "supplierName": zod.string(),
+  "reference": zod.string().describe('Free-text reference to the originating record, e.g. a Job Manager job id.'),
   "status": zod.enum(['Draft', 'Submitted', 'Confirmed', 'Received', 'Cancelled']),
   "lines": zod.array(zod.object({
   "lineNumber": zod.number().int().min(1),
@@ -350,6 +355,7 @@ export const GetOrderResponse = zod.object({
   "orderNumber": zod.string(),
   "orderDate": zod.coerce.date(),
   "supplierName": zod.string(),
+  "reference": zod.string().describe('Free-text reference to the originating record, e.g. a Job Manager job id.'),
   "status": zod.enum(['Draft', 'Submitted', 'Confirmed', 'Received', 'Cancelled']),
   "lines": zod.array(zod.object({
   "lineNumber": zod.number().int().min(1),
@@ -387,6 +393,7 @@ export const updateOrderBodyLinesItemUnitPriceMin = 0;
 export const UpdateOrderBody = zod.object({
   "orderDate": zod.coerce.date().optional(),
   "supplierName": zod.string().min(1).optional(),
+  "reference": zod.string().optional().describe('Free-text reference to the originating record, e.g. a Job Manager job id.'),
   "status": zod.enum(['Draft', 'Submitted', 'Confirmed', 'Received', 'Cancelled']).optional(),
   "lines": zod.array(zod.object({
   "lineNumber": zod.number().int().min(1),
@@ -411,6 +418,7 @@ export const UpdateOrderResponse = zod.object({
   "orderNumber": zod.string(),
   "orderDate": zod.coerce.date(),
   "supplierName": zod.string(),
+  "reference": zod.string().describe('Free-text reference to the originating record, e.g. a Job Manager job id.'),
   "status": zod.enum(['Draft', 'Submitted', 'Confirmed', 'Received', 'Cancelled']),
   "lines": zod.array(zod.object({
   "lineNumber": zod.number().int().min(1),
@@ -437,5 +445,59 @@ export const DeleteOrderParams = zod.object({
 })
 
 export const DeleteOrderResponse = zod.void()
+
+
+/**
+ * Appends a line with the next line number. If the part is already on the order its quantity is increased instead. Only Draft orders can be changed (409 otherwise).
+ * @summary Add a line to a Draft purchase order
+ */
+
+
+
+export const AppendOrderLineParams = zod.object({
+  "orderNumber": zod.coerce.string().min(1).describe('The unique Order Number.')
+})
+
+
+
+export const appendOrderLineBodyUnitPriceMin = 0;
+
+
+
+export const AppendOrderLineBody = zod.object({
+  "partNumber": zod.string().min(1),
+  "externalPartNumber": zod.string().optional(),
+  "description": zod.string().optional(),
+  "quantity": zod.number().int().min(1),
+  "unitPrice": zod.number().min(appendOrderLineBodyUnitPriceMin)
+})
+
+
+
+export const appendOrderLineResponseLinesItemUnitPriceMin = 0;
+
+
+export const appendOrderLineResponseTotalValueMin = 0;
+
+
+
+export const AppendOrderLineResponse = zod.object({
+  "orderNumber": zod.string(),
+  "orderDate": zod.coerce.date(),
+  "supplierName": zod.string(),
+  "reference": zod.string().describe('Free-text reference to the originating record, e.g. a Job Manager job id.'),
+  "status": zod.enum(['Draft', 'Submitted', 'Confirmed', 'Received', 'Cancelled']),
+  "lines": zod.array(zod.object({
+  "lineNumber": zod.number().int().min(1),
+  "partNumber": zod.string(),
+  "externalPartNumber": zod.string(),
+  "description": zod.string(),
+  "quantity": zod.number().int().min(1),
+  "unitPrice": zod.number().min(appendOrderLineResponseLinesItemUnitPriceMin)
+})).min(1),
+  "totalValue": zod.number().min(appendOrderLineResponseTotalValueMin),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
 
 

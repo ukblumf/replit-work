@@ -15,6 +15,7 @@ export const ordersTable = pgTable("orders", {
   orderDate: date("order_date", { mode: "string" }).notNull(),
   supplierName: text("supplier_name").notNull(),
   status: text("status").notNull().default("Draft"),
+  reference: text("reference").notNull().default(""),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true })
     .notNull()

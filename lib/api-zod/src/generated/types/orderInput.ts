@@ -10,10 +10,12 @@ import type { OrderLineInput } from './orderLineInput';
 
 export interface OrderInput {
   /** @minLength 1 */
-  orderNumber: string;
+  orderNumber?: string;
   orderDate: Date;
   /** @minLength 1 */
   supplierName: string;
+  /** Free-text reference to the originating record, e.g. a Job Manager job id. */
+  reference?: string;
   status: OrderInputStatus;
   /** @minItems 1 */
   lines: OrderLineInput[];
