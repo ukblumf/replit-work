@@ -21,7 +21,7 @@ Proof-of-concept apps (Stock Control, Ordering) sharing one REST API, built to s
 
 ## API (all under `/api`)
 - `GET/POST /stock`, `GET /stock/summary`, `GET/PATCH/DELETE /stock/:partNumber`, `POST /stock/:partNumber/adjust` (atomic `quantityDelta`; 409 `{error, available}` if it would go below zero)
-- `GET/POST /orders`, `GET /orders/summary`, `GET/PATCH/DELETE /order/:orderNumber` (note singular `/order/` for single items)
+- `GET/POST /orders` (`?reference=` filter; `orderNumber` optional on POST, server generates `PO-nnnn`), `GET /orders/summary`, `GET/PATCH/DELETE /order/:orderNumber` (note singular `/order/` for single items), `POST /order/:orderNumber/lines` (append a line to a Draft order; adds to quantity if the part is already on it; 409 if not Draft)
 - `GET /healthz`, `GET /openapi.json`
 - Auth: `Authorization: Bearer <key>`; key is `STOCK_API_KEY`, falling back to `SESSION_SECRET`.
 - Setting an order to `Received` via `PATCH /order/:orderNumber` adds each line's quantity to matching stock items in the same transaction (only on the transition into Received; lines with unknown part numbers are skipped). The Ordering UI asks for confirmation first.
@@ -29,7 +29,7 @@ Proof-of-concept apps (Stock Control, Ordering) sharing one REST API, built to s
 
 ## Data Model
 - `stock_items`: partNumber (PK), itemName, description, quantity, cost, retailPrice, binNumber
-- `orders`: orderNumber (PK, client supplied), orderDate, supplierName, status (default `Draft`)
+- `orders`: orderNumber (PK, optional on create), orderDate, supplierName, status (default `Draft`), reference (free text, e.g. a job id; default empty)
 - `order_lines`: (orderNumber, lineNumber) PK, partNumber, externalPartNumber, description, quantity, unitPrice
 
 ## Current Status
@@ -40,7 +40,7 @@ Proof-of-concept apps (Stock Control, Ordering) sharing one REST API, built to s
 ## Known Issues
 - Auth bypass (accepted for the POC): `stockApiAuth` skips the API key when `Origin` matches `Host` or `Sec-Fetch-Site` is `same-origin`. Both headers can be forged by any non-browser client, so the API is effectively open. The UIs send no key and depend on this, so removing it breaks them. Decision: leave as-is while this is a private demo; revisit before showing to a client.
 - `PATCH /stock/:partNumber` sets an absolute quantity and can lose concurrent updates; use `POST /stock/:partNumber/adjust` for quantity changes.
-- `PATCH /order/:orderNumber` with `lines` deletes and re-inserts all lines; there is no add-line endpoint.
+- `PATCH /order/:orderNumber` with `lines` deletes and re-inserts all lines; use `POST /order/:orderNumber/lines` to add to an order.
 - `GET /openapi.json` is hand-written in `api-docs.ts` (e.g. `parameters: ["partNumber"]`), not generated from `openapi.yaml`, so it is not valid OpenAPI for n8n import.
 - Low-stock threshold is hardcoded to 5 in the stock summary query.
 - `GET /stock` and `GET /orders` have no pagination.

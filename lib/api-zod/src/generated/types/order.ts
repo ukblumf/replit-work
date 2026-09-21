@@ -12,6 +12,8 @@ export interface Order {
   orderNumber: string;
   orderDate: Date;
   supplierName: string;
+  /** Free-text reference to the originating record, e.g. a Job Manager job id. */
+  reference: string;
   status: OrderStatus;
   /** @minItems 1 */
   lines: OrderLine[];

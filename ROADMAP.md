@@ -13,8 +13,8 @@
 ### Suggested API prerequisites
 - [-] Same-origin auth bypass: deliberately left as-is for the POC (UIs depend on it). Job Manager and n8n should still send a Bearer key. Revisit before any client demo (options: server-side key injection/proxy, or a key in the UIs)
 - [x] Atomic stock adjustment: `POST /stock/:partNumber/adjust` (branch `feat/stock-adjust`) rejects going below zero, avoiding read-modify-write races
-- [ ] Server-generated order numbers, or a documented scheme, to avoid 409 collisions
-- [ ] Way to add lines to an existing Draft order, and a job reference on orders for traceability
+- [x] Server-generated order numbers (`PO-nnnn` when `orderNumber` is omitted)
+- [x] `POST /order/:orderNumber/lines` for Draft orders, and an order `reference` field (filter with `?reference=`)
 - [ ] Idempotency (e.g. job id + part as a key) so retries do not create duplicate draft orders
 - [ ] Serve the real `openapi.yaml` from `/api/openapi.json` for n8n import
 

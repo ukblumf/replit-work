@@ -29,6 +29,7 @@ import type {
   NotFoundResponse,
   Order,
   OrderInput,
+  OrderLineAppend,
   OrderSummary,
   OrderSummaryTotals,
   OrderUpdate,
@@ -820,6 +821,7 @@ export const getCreateOrderUrl = () => {
 }
 
 /**
+ * If orderNumber is omitted the server generates the next PO-nnnn number.
  * @summary Create a purchase order
  */
 export const createOrder = async (orderInput: OrderInput, options?: Parameters<typeof customFetch>[1]): Promise<Order> => {
@@ -1215,5 +1217,95 @@ export const useDeleteOrder = <TError = ErrorType<UnauthorizedResponse | NotFoun
         TContext
       > => {
       return useMutation(getDeleteOrderMutationOptions(options));
+    }
+
+export const getAppendOrderLineUrl = (orderNumber: string,) => {
+
+
+
+
+  return `/api/order/${orderNumber}/lines`
+}
+
+/**
+ * Appends a line with the next line number. If the part is already on the order its quantity is increased instead. Only Draft orders can be changed (409 otherwise).
+ * @summary Add a line to a Draft purchase order
+ */
+export const appendOrderLine = async (orderNumber: string,
+    orderLineAppend: OrderLineAppend, options?: Parameters<typeof customFetch>[1]): Promise<Order> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<Order>(getAppendOrderLineUrl(orderNumber),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(orderLineAppend)
+  }
+);}
+
+
+
+
+
+export const getAppendOrderLineMutationKey = () => ['appendOrderLine'] as const;
+
+export const getAppendOrderLineMutationOptions = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | NotFoundResponse | Error>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof appendOrderLine>>, TError,AppendOrderLineMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof appendOrderLine>>, TError,AppendOrderLineMutationVariables, TContext> => {
+
+const mutationKey = getAppendOrderLineMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof appendOrderLine>>, AppendOrderLineMutationVariables> = (props) => {
+          const {orderNumber,data} = props ?? {};
+
+          return  appendOrderLine(orderNumber,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AppendOrderLineMutationResult = NonNullable<Awaited<ReturnType<typeof appendOrderLine>>>
+    export type AppendOrderLineMutationBody = BodyType<OrderLineAppend>
+    export type AppendOrderLineMutationError = ErrorType<BadRequestResponse | UnauthorizedResponse | NotFoundResponse | Error>
+    export type AppendOrderLineMutationVariables = {orderNumber: string;data: BodyType<OrderLineAppend>}
+
+    /**
+ * @summary Add a line to a Draft purchase order
+ */
+export const useAppendOrderLine = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | NotFoundResponse | Error>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof appendOrderLine>>, TError,AppendOrderLineMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof appendOrderLine>>,
+        TError,
+        AppendOrderLineMutationVariables,
+        TContext
+      > => {
+      return useMutation(getAppendOrderLineMutationOptions(options));
     }
 

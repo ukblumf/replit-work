@@ -207,6 +207,12 @@ paths:
           schema:
             type: string
           description: Case-insensitive partial match on a line Part Number.
+        - name: reference
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Exact match on the order Reference (e.g. a Job Manager job id).
       responses:
         "200":
           description: Purchase order summaries
@@ -222,6 +228,7 @@ paths:
       operationId: createOrder
       tags: [orders]
       summary: Create a purchase order
+      description: If orderNumber is omitted the server generates the next PO-nnnn number.
       requestBody:
         required: true
         content:
@@ -316,6 +323,41 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "404":
           $ref: "#/components/responses/NotFound"
+  /order/{orderNumber}/lines:
+    post:
+      operationId: appendOrderLine
+      tags: [orders]
+      summary: Add a line to a Draft purchase order
+      description: >
+        Appends a line with the next line number. If the part is already on the order its
+        quantity is increased instead. Only Draft orders can be changed (409 otherwise).
+      parameters:
+        - $ref: "#/components/parameters/OrderNumber"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OrderLineAppend"
+      responses:
+        "200":
+          description: Updated purchase order
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Order"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          description: Order is not a Draft
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
 components:
   securitySchemes:
     bearerAuth:
@@ -544,6 +586,26 @@ components:
         - description
         - quantity
         - unitPrice
+    OrderLineAppend:
+      type: object
+      properties:
+        partNumber:
+          type: string
+          minLength: 1
+        externalPartNumber:
+          type: string
+        description:
+          type: string
+        quantity:
+          type: integer
+          minimum: 1
+        unitPrice:
+          type: number
+          minimum: 0
+      required:
+        - partNumber
+        - quantity
+        - unitPrice
     Order:
       type: object
       properties:
@@ -554,6 +616,9 @@ components:
           format: date
         supplierName:
           type: string
+        reference:
+          type: string
+          description: Free-text reference to the originating record, e.g. a Job Manager job id.
         status:
           type: string
           enum: [Draft, Submitted, Confirmed, Received, Cancelled]
@@ -572,6 +637,7 @@ components:
           type: string
           format: date-time
       required:
+        - reference
         - orderNumber
         - orderDate
         - supplierName
@@ -592,6 +658,9 @@ components:
         supplierName:
           type: string
           minLength: 1
+        reference:
+          type: string
+          description: Free-text reference to the originating record, e.g. a Job Manager job id.
         status:
           type: string
           enum: [Draft, Submitted, Confirmed, Received, Cancelled]
@@ -601,7 +670,6 @@ components:
           items:
             $ref: "#/components/schemas/OrderLineInput"
       required:
-        - orderNumber
         - orderDate
         - supplierName
         - status
@@ -615,6 +683,9 @@ components:
         supplierName:
           type: string
           minLength: 1
+        reference:
+          type: string
+          description: Free-text reference to the originating record, e.g. a Job Manager job id.
         status:
           type: string
           enum: [Draft, Submitted, Confirmed, Received, Cancelled]
@@ -634,6 +705,9 @@ components:
           format: date
         supplierName:
           type: string
+        reference:
+          type: string
+          description: Free-text reference to the originating record, e.g. a Job Manager job id.
         status:
           type: string
           enum: [Draft, Submitted, Confirmed, Received, Cancelled]
@@ -643,6 +717,7 @@ components:
           type: number
           minimum: 0
       required:
+        - reference
         - orderNumber
         - orderDate
         - supplierName

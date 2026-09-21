@@ -15,4 +15,8 @@ orderNumber?: string;
  * Case-insensitive partial match on a line Part Number.
  */
 partNumber?: string;
+/**
+ * Exact match on the order Reference (e.g. a Job Manager job id).
+ */
+reference?: string;
 };
