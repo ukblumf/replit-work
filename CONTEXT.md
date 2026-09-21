@@ -46,9 +46,9 @@ Proof-of-concept apps built to show that automation services such as n8n can dri
 - `jobs.job_parts`: (jobId, partNumber) PK, description, quantity, quantityAllocated, quantityOrdered, draftOrderNumber
 
 ## Current Status
-- Status: In Progress (POC). Job Manager is built and typechecks but has not yet been exercised end to end in the running apps.
+- Status: In Progress (POC). Job Manager is built, typechecks, and has been tested end to end in the running apps (manual test by the user, all good).
 - Current branch: `feat/job-manager` (main is on github.com/ukblumf/replit-work)
-- Next: test Job Manager end to end (see ROADMAP.md)
+- Next: merge `feat/job-manager` to main (see ROADMAP.md)
 
 ## Known Issues
 - Auth bypass (accepted for the POC): `stockApiAuth` skips the API key when `Origin` matches `Host` or `Sec-Fetch-Site` is `same-origin`. Both headers can be forged by any non-browser client, so the API is effectively open. The UIs send no key and depend on this, so removing it breaks them. Decision: leave as-is while this is a private demo; revisit before showing to a client.

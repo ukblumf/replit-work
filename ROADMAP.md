@@ -7,7 +7,7 @@
 ## Next Phase: prove Job Manager end to end
 - [x] Job Manager API and UI built (`feat/job-manager`)
 - [x] Prerequisites: atomic stock adjust, generated order numbers, add-line endpoint, order `reference`
-- [ ] Test in the running apps: create a job, add a part with enough stock, add a part with a shortfall (draft order appears in Ordering with the job id as reference), remove a part
+- [x] Test in the running apps: create a job, add a part with enough stock, add a part with a shortfall (draft order appears in Ordering with the job id as reference), remove a part
 - [ ] Merge `feat/job-manager` to main after testing
 - [-] Same-origin auth bypass: deliberately left as-is for the POC (UIs depend on it). Job Manager and n8n should still send a Bearer key. Revisit before any client demo (options: server-side key injection/proxy, or a key in the UIs)
 - [ ] Serve the real OpenAPI documents from `/api/openapi.json` and `/jobs-api/openapi.json` for n8n import
