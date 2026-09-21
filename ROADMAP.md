@@ -14,6 +14,8 @@
 
 ## Future Phases
 - [x] n8n example workflows in `n8n/` (written, not yet run in a live n8n)
+- [x] n8n chat agent workflow (`n8n/04-chat-agent.json`): natural-language questions mapped to read-only API tools (written, not yet run in a live n8n)
+- [ ] Optional: `GET /jobs?partNumber=` filter so the chat agent can find jobs using a part in one call; optional MCP Server variant of the tools
 - [ ] Run the n8n workflows against a live instance and fix anything n8n rejects
 - [ ] Status dashboard: an n8n workflow (Webhook trigger) calls `/api/healthz`, `/jobs-api/healthz`, `/api/stock/summary`, `/api/orders/summary` and `/jobs-api/jobs`, checks the three UI URLs (`/`, `/ordering/`, `/jobs/`) return 200, and returns one JSON document; a small page renders it. Optional scheduled run that alerts when a health check fails. Job Manager has no summary endpoint, so count the `/jobs` list.
 
