@@ -1,0 +1,492 @@
+{
+  "name": "Stock Apps - Chat agent (natural language queries)",
+  "nodes": [
+    {
+      "parameters": {
+        "public": false,
+        "options": {}
+      },
+      "id": "44691b41-d283-5628-90b4-8fb885572a90",
+      "name": "Chat Trigger",
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        300
+      ],
+      "notes": "Click 'Open chat' (or 'Chat') on the canvas to talk to the agent.",
+      "notesInFlow": false
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "76ab3d37-e992-5aa6-97ea-6605a78e5f87",
+              "name": "baseUrl",
+              "value": "https://YOUR-APP-URL",
+              "type": "string"
+            },
+            {
+              "id": "6ec59e34-2fc9-513a-a054-d7b60b4fda4b",
+              "name": "apiKey",
+              "value": "YOUR-API-KEY",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "id": "86180c60-d555-5739-b769-0f6218820451",
+      "name": "Config",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        220,
+        300
+      ],
+      "notes": "Edit baseUrl (no trailing slash) and apiKey (STOCK_API_KEY). The tools read these values.",
+      "notesInFlow": true
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.chatInput }}",
+        "options": {
+          "systemMessage": "You are the assistant for a small Stock Control, Ordering and Job Manager system. Answer questions by calling the tools; never guess or invent data. You can only read data, not change it.\n\nRules:\n- Part numbers, order numbers (PO-nnnn) and job ids (JOB-nnnn) are matched case-insensitively. If the user gives a partial part number, use Search Stock first.\n- \"Status of part X\": call Get Stock Item (quantity on hand, bin, cost, price), List Orders For Part (which orders contain it, with status; only Draft/Ordered orders are still 'on order', Received ones are already in stock), and find the jobs using it: call List Jobs, then Get Job for each job and keep the ones whose parts include X (report quantity, quantityAllocated and quantityOrdered). Give all three parts in the answer: on stock, on order, used in jobs.\n- \"Summary of stock\": call Stock Summary. The summary only gives a low-stock count (5 units or fewer); if asked which items are low, call Search Stock with an empty-ish broad term such as '-' or a common prefix and list items with quantity 5 or fewer.\n- \"Status of order X\": call Get Order and report supplier, date, status, reference and the lines with quantities.\n- Order summary questions: call Orders Summary.\n- If a tool returns 404, say plainly that the part/order/job was not found. If it returns an error, say so; do not retry more than once.\n- Keep answers short. Use a small table or bullet list for lines and quantities.",
+          "maxIterations": 20
+        }
+      },
+      "id": "3e9ae753-2583-5df2-857e-24947ffa328b",
+      "name": "AI Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        460,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "gpt-4o-mini"
+        },
+        "options": {
+          "temperature": 0
+        }
+      },
+      "id": "72374032-4e19-53f2-b55c-68e9e2dc417c",
+      "name": "OpenAI Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        300,
+        560
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "",
+          "name": "OpenAI account"
+        }
+      },
+      "notes": "Select your OpenAI credential. Any chat model that supports tool calling works.",
+      "notesInFlow": true
+    },
+    {
+      "parameters": {
+        "contextWindowLength": 10
+      },
+      "id": "76ad6a57-592f-5447-9eb6-7cb09b009448",
+      "name": "Chat Memory",
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        460,
+        560
+      ]
+    },
+    {
+      "parameters": {
+        "toolDescription": "Find stock items whose part number contains the text. Returns a list of items with quantity on hand. Use it when the user gives a partial part number.",
+        "url": "={{ $('Config').item.json.baseUrl }}/api/stock?partNumber={partNumber}",
+        "sendHeaders": true,
+        "parametersHeaders": {
+          "values": [
+            {
+              "name": "Authorization",
+              "valueProvider": "fieldValue",
+              "value": "={{ 'Bearer ' + $('Config').item.json.apiKey }}"
+            }
+          ]
+        },
+        "placeholderDefinitions": {
+          "values": [
+            {
+              "name": "partNumber",
+              "description": "Part of a part number to search for",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "id": "0de35dff-863a-5ffc-961e-8f86aeea4bca",
+      "name": "Search Stock",
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        700,
+        560
+      ]
+    },
+    {
+      "parameters": {
+        "toolDescription": "Get one stock item by exact part number: name, description, quantity on hand, cost, retail price and bin number. 404 if the part does not exist.",
+        "url": "={{ $('Config').item.json.baseUrl }}/api/stock/{partNumber}",
+        "sendHeaders": true,
+        "parametersHeaders": {
+          "values": [
+            {
+              "name": "Authorization",
+              "valueProvider": "fieldValue",
+              "value": "={{ 'Bearer ' + $('Config').item.json.apiKey }}"
+            }
+          ]
+        },
+        "placeholderDefinitions": {
+          "values": [
+            {
+              "name": "partNumber",
+              "description": "The part number, e.g. ABC-123",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "id": "3aaf6379-b0be-59bb-b214-4702db99bfd6",
+      "name": "Get Stock Item",
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        920,
+        560
+      ]
+    },
+    {
+      "parameters": {
+        "toolDescription": "Get overall stock totals: item count, total units, inventory cost, retail value and low-stock count. Takes no input.",
+        "url": "={{ $('Config').item.json.baseUrl }}/api/stock/summary",
+        "sendHeaders": true,
+        "parametersHeaders": {
+          "values": [
+            {
+              "name": "Authorization",
+              "valueProvider": "fieldValue",
+              "value": "={{ 'Bearer ' + $('Config').item.json.apiKey }}"
+            }
+          ]
+        }
+      },
+      "id": "410ffd0c-77b0-5d88-9ac5-a8bb6d580f0c",
+      "name": "Stock Summary",
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        1140,
+        560
+      ]
+    },
+    {
+      "parameters": {
+        "toolDescription": "List purchase orders that contain a part number. Returns order number, date, supplier, status and reference. Orders with status Draft or Ordered are 'on order'; Received are already in stock.",
+        "url": "={{ $('Config').item.json.baseUrl }}/api/orders?partNumber={partNumber}",
+        "sendHeaders": true,
+        "parametersHeaders": {
+          "values": [
+            {
+              "name": "Authorization",
+              "valueProvider": "fieldValue",
+              "value": "={{ 'Bearer ' + $('Config').item.json.apiKey }}"
+            }
+          ]
+        },
+        "placeholderDefinitions": {
+          "values": [
+            {
+              "name": "partNumber",
+              "description": "The part number, e.g. ABC-123",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "id": "aed1c844-d938-5469-9482-debddc1a59d7",
+      "name": "List Orders For Part",
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        1360,
+        560
+      ]
+    },
+    {
+      "parameters": {
+        "toolDescription": "Get one purchase order by exact order number, with its lines (part, quantity, unit price), supplier, status and reference. 404 if not found.",
+        "url": "={{ $('Config').item.json.baseUrl }}/api/order/{orderNumber}",
+        "sendHeaders": true,
+        "parametersHeaders": {
+          "values": [
+            {
+              "name": "Authorization",
+              "valueProvider": "fieldValue",
+              "value": "={{ 'Bearer ' + $('Config').item.json.apiKey }}"
+            }
+          ]
+        },
+        "placeholderDefinitions": {
+          "values": [
+            {
+              "name": "orderNumber",
+              "description": "The order number, e.g. PO-0001",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "id": "ad0c3ef5-007a-5a07-9a2e-271bdc1e14ab",
+      "name": "Get Order",
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        700,
+        760
+      ]
+    },
+    {
+      "parameters": {
+        "toolDescription": "Get overall purchase order totals, such as counts by status. Takes no input.",
+        "url": "={{ $('Config').item.json.baseUrl }}/api/orders/summary",
+        "sendHeaders": true,
+        "parametersHeaders": {
+          "values": [
+            {
+              "name": "Authorization",
+              "valueProvider": "fieldValue",
+              "value": "={{ 'Bearer ' + $('Config').item.json.apiKey }}"
+            }
+          ]
+        }
+      },
+      "id": "630f7182-cad1-544e-8512-93d3fcd6314b",
+      "name": "Orders Summary",
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        920,
+        760
+      ]
+    },
+    {
+      "parameters": {
+        "toolDescription": "List all jobs (job id, date, client, description, number of parts). It does not show which parts a job uses; call Get Job for that.",
+        "url": "={{ $('Config').item.json.baseUrl }}/jobs-api/jobs",
+        "sendHeaders": true,
+        "parametersHeaders": {
+          "values": [
+            {
+              "name": "Authorization",
+              "valueProvider": "fieldValue",
+              "value": "={{ 'Bearer ' + $('Config').item.json.apiKey }}"
+            }
+          ]
+        }
+      },
+      "id": "4f21fe68-1080-5380-ae01-a988f08ca8f2",
+      "name": "List Jobs",
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        1140,
+        760
+      ]
+    },
+    {
+      "parameters": {
+        "toolDescription": "Get one job by job id, including its parts with quantity needed, quantityAllocated (taken from stock) and quantityOrdered (put on a Draft order because stock was short). 404 if not found.",
+        "url": "={{ $('Config').item.json.baseUrl }}/jobs-api/jobs/{jobId}",
+        "sendHeaders": true,
+        "parametersHeaders": {
+          "values": [
+            {
+              "name": "Authorization",
+              "valueProvider": "fieldValue",
+              "value": "={{ 'Bearer ' + $('Config').item.json.apiKey }}"
+            }
+          ]
+        },
+        "placeholderDefinitions": {
+          "values": [
+            {
+              "name": "jobId",
+              "description": "The job id, e.g. JOB-0001",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "id": "e195f343-6812-58e6-acbe-786b357e81ae",
+      "name": "Get Job",
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        1360,
+        760
+      ]
+    }
+  ],
+  "connections": {
+    "Chat Trigger": {
+      "main": [
+        [
+          {
+            "node": "Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Config": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Chat Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search Stock": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Stock Item": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Stock Summary": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "List Orders For Part": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Order": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Orders Summary": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "List Jobs": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Job": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "meta": {
+    "templateCredsSetupCompleted": false
+  },
+  "tags": []
+}
