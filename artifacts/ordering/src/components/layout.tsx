@@ -53,9 +53,6 @@ export function Layout({ children }: { children: ReactNode }) {
               <Home size={16} />
               <span className="hidden sm:inline">Service Manager</span>
             </a>
-            <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center border">
-              <span className="text-xs font-medium">AD</span>
-            </div>
           </div>
         </div>
       </header>
