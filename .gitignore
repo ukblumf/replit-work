@@ -47,3 +47,7 @@ Thumbs.db
 # Replit
 .cache/
 .local/
+
+# Local Replit config edits and Claude Code session data
+.replit
+.claude_user/
