@@ -12,7 +12,7 @@
 
 ### Suggested API prerequisites
 - [ ] Fix or replace the same-origin auth bypass so Job Manager and n8n must send a Bearer key
-- [ ] Atomic stock adjustment (e.g. `quantityDelta` on PATCH, or `POST /stock/:partNumber/adjust`) that rejects going below zero, to avoid read-modify-write races
+- [x] Atomic stock adjustment: `POST /stock/:partNumber/adjust` (branch `feat/stock-adjust`) rejects going below zero, avoiding read-modify-write races
 - [ ] Server-generated order numbers, or a documented scheme, to avoid 409 collisions
 - [ ] Way to add lines to an existing Draft order, and a job reference on orders for traceability
 - [ ] Idempotency (e.g. job id + part as a key) so retries do not create duplicate draft orders

@@ -9,6 +9,7 @@
 export * from './badRequestResponse';
 export * from './error';
 export * from './healthStatus';
+export * from './insufficientStock';
 export * from './listOrdersParams';
 export * from './listStockItemsParams';
 export * from './notFoundResponse';
@@ -24,6 +25,7 @@ export * from './orderSummaryTotals';
 export * from './orderSummaryTotalsStatusCounts';
 export * from './orderUpdate';
 export * from './orderUpdateStatus';
+export * from './stockAdjustment';
 export * from './stockItem';
 export * from './stockItemInput';
 export * from './stockItemUpdate';

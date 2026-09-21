@@ -152,6 +152,42 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "404":
           $ref: "#/components/responses/NotFound"
+  /stock/{partNumber}/adjust:
+    post:
+      operationId: adjustStockQuantity
+      tags: [stock]
+      summary: Atomically adjust a stock quantity
+      description: >
+        Adds `quantityDelta` (negative to take stock) to the current quantity in a single
+        atomic operation, so concurrent callers cannot overwrite each other. Rejected with
+        409 if the result would be below zero; the current quantity is then returned in `available`.
+      parameters:
+        - $ref: "#/components/parameters/PartNumber"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StockAdjustment"
+      responses:
+        "200":
+          description: Updated stock item
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StockItem"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          description: Insufficient stock
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InsufficientStock"
   /orders:
     get:
       operationId: listOrders
@@ -331,6 +367,25 @@ components:
           type: string
       required:
         - status
+    StockAdjustment:
+      type: object
+      properties:
+        quantityDelta:
+          type: integer
+          description: Amount to add to stock; negative to remove. Must not be 0.
+      required:
+        - quantityDelta
+    InsufficientStock:
+      type: object
+      properties:
+        error:
+          type: string
+        available:
+          type: integer
+          minimum: 0
+      required:
+        - error
+        - available
     StockItem:
       type: object
       properties:

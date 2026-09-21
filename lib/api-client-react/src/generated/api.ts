@@ -23,6 +23,7 @@ import type {
   BadRequestResponse,
   Error,
   HealthStatus,
+  InsufficientStock,
   ListOrdersParams,
   ListStockItemsParams,
   NotFoundResponse,
@@ -31,6 +32,7 @@ import type {
   OrderSummary,
   OrderSummaryTotals,
   OrderUpdate,
+  StockAdjustment,
   StockItem,
   StockItemInput,
   StockItemUpdate,
@@ -632,6 +634,96 @@ export const useDeleteStockItem = <TError = ErrorType<UnauthorizedResponse | Not
         TContext
       > => {
       return useMutation(getDeleteStockItemMutationOptions(options));
+    }
+
+export const getAdjustStockQuantityUrl = (partNumber: string,) => {
+
+
+
+
+  return `/api/stock/${partNumber}/adjust`
+}
+
+/**
+ * Adds `quantityDelta` (negative to take stock) to the current quantity in a single atomic operation, so concurrent callers cannot overwrite each other. Rejected with 409 if the result would be below zero; the current quantity is then returned in `available`.
+ * @summary Atomically adjust a stock quantity
+ */
+export const adjustStockQuantity = async (partNumber: string,
+    stockAdjustment: StockAdjustment, options?: Parameters<typeof customFetch>[1]): Promise<StockItem> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<StockItem>(getAdjustStockQuantityUrl(partNumber),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(stockAdjustment)
+  }
+);}
+
+
+
+
+
+export const getAdjustStockQuantityMutationKey = () => ['adjustStockQuantity'] as const;
+
+export const getAdjustStockQuantityMutationOptions = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | NotFoundResponse | InsufficientStock>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof adjustStockQuantity>>, TError,AdjustStockQuantityMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof adjustStockQuantity>>, TError,AdjustStockQuantityMutationVariables, TContext> => {
+
+const mutationKey = getAdjustStockQuantityMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof adjustStockQuantity>>, AdjustStockQuantityMutationVariables> = (props) => {
+          const {partNumber,data} = props ?? {};
+
+          return  adjustStockQuantity(partNumber,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AdjustStockQuantityMutationResult = NonNullable<Awaited<ReturnType<typeof adjustStockQuantity>>>
+    export type AdjustStockQuantityMutationBody = BodyType<StockAdjustment>
+    export type AdjustStockQuantityMutationError = ErrorType<BadRequestResponse | UnauthorizedResponse | NotFoundResponse | InsufficientStock>
+    export type AdjustStockQuantityMutationVariables = {partNumber: string;data: BodyType<StockAdjustment>}
+
+    /**
+ * @summary Atomically adjust a stock quantity
+ */
+export const useAdjustStockQuantity = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | NotFoundResponse | InsufficientStock>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof adjustStockQuantity>>, TError,AdjustStockQuantityMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof adjustStockQuantity>>,
+        TError,
+        AdjustStockQuantityMutationVariables,
+        TContext
+      > => {
+      return useMutation(getAdjustStockQuantityMutationOptions(options));
     }
 
 export const getListOrdersUrl = (params?: ListOrdersParams,) => {

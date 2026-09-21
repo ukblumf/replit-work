@@ -200,6 +200,42 @@ export const DeleteStockItemResponse = zod.void()
 
 
 /**
+ * Adds `quantityDelta` (negative to take stock) to the current quantity in a single atomic operation, so concurrent callers cannot overwrite each other. Rejected with 409 if the result would be below zero; the current quantity is then returned in `available`.
+ * @summary Atomically adjust a stock quantity
+ */
+
+
+
+export const AdjustStockQuantityParams = zod.object({
+  "partNumber": zod.coerce.string().min(1).describe('The unique Part Number.')
+})
+
+export const AdjustStockQuantityBody = zod.object({
+  "quantityDelta": zod.number().int().describe('Amount to add to stock; negative to remove. Must not be 0.')
+})
+
+export const adjustStockQuantityResponseQuantityMin = 0;
+
+export const adjustStockQuantityResponseCostMin = 0;
+
+export const adjustStockQuantityResponseRetailPriceMin = 0;
+
+
+
+export const AdjustStockQuantityResponse = zod.object({
+  "partNumber": zod.string(),
+  "itemName": zod.string(),
+  "description": zod.string(),
+  "quantity": zod.number().int().min(adjustStockQuantityResponseQuantityMin),
+  "cost": zod.number().min(adjustStockQuantityResponseCostMin),
+  "retailPrice": zod.number().min(adjustStockQuantityResponseRetailPriceMin),
+  "binNumber": zod.string(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+/**
  * Returns purchase orders, optionally filtered by order number or a contained part number.
  * @summary List purchase orders
  */

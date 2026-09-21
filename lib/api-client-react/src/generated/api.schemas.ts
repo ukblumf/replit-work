@@ -9,6 +9,17 @@ export interface HealthStatus {
   status: string;
 }
 
+export interface StockAdjustment {
+  /** Amount to add to stock; negative to remove. Must not be 0. */
+  quantityDelta: number;
+}
+
+export interface InsufficientStock {
+  error: string;
+  /** @minimum 0 */
+  available: number;
+}
+
 export interface StockItem {
   partNumber: string;
   itemName: string;

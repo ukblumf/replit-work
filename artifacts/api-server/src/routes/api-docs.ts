@@ -35,6 +35,9 @@ router.get("/openapi.json", (_req, res) => {
         patch: { summary: "Update a stock item" },
         delete: { summary: "Delete a stock item" },
       },
+      "/stock/{partNumber}/adjust": {
+        post: { summary: "Atomically adjust a stock quantity (409 if insufficient)" },
+      },
       "/orders": {
         get: {
           summary: "List orders",

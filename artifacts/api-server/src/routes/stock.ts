@@ -1,5 +1,8 @@
 import { Router, type IRouter } from "express";
 import {
+  AdjustStockQuantityBody,
+  AdjustStockQuantityParams,
+  AdjustStockQuantityResponse,
   CreateStockItemBody,
   CreateStockItemResponse,
   DeleteStockItemParams,
@@ -13,7 +16,7 @@ import {
   UpdateStockItemResponse,
 } from "@workspace/api-zod";
 import { db, stockItemsTable } from "@workspace/db";
-import { asc, eq, ilike, sql } from "drizzle-orm";
+import { and, asc, eq, ilike, sql } from "drizzle-orm";
 import { stockApiAuth } from "../middlewares/stock-api-auth";
 
 const router: IRouter = Router();
@@ -126,6 +129,57 @@ router.patch("/stock/:partNumber", async (req, res): Promise<void> => {
   }
 
   res.json(UpdateStockItemResponse.parse(updated));
+});
+
+// Atomic quantity change: a single UPDATE applies the delta and refuses to go below zero,
+// so concurrent callers (e.g. several jobs taking the same part) cannot overwrite each other.
+router.post("/stock/:partNumber/adjust", async (req, res): Promise<void> => {
+  const params = AdjustStockQuantityParams.safeParse(req.params);
+  const body = AdjustStockQuantityBody.safeParse(req.body);
+  if (!params.success || !body.success) {
+    res.status(400).json({
+      error: !params.success ? params.error.message : body.error?.message,
+    });
+    return;
+  }
+
+  const { quantityDelta } = body.data;
+  if (quantityDelta === 0) {
+    res.status(400).json({ error: "quantityDelta must not be 0" });
+    return;
+  }
+
+  const [updated] = await db
+    .update(stockItemsTable)
+    .set({ quantity: sql`${stockItemsTable.quantity} + ${quantityDelta}` })
+    .where(
+      and(
+        eq(stockItemsTable.partNumber, params.data.partNumber),
+        sql`${stockItemsTable.quantity} + ${quantityDelta} >= 0`,
+      ),
+    )
+    .returning();
+
+  if (updated) {
+    res.json(AdjustStockQuantityResponse.parse(updated));
+    return;
+  }
+
+  // No row updated: either the part does not exist or there is not enough stock.
+  const [existing] = await db
+    .select({ quantity: stockItemsTable.quantity })
+    .from(stockItemsTable)
+    .where(eq(stockItemsTable.partNumber, params.data.partNumber));
+
+  if (!existing) {
+    res.status(404).json({ error: "Stock item not found" });
+    return;
+  }
+
+  res.status(409).json({
+    error: "Insufficient stock",
+    available: existing.quantity,
+  });
 });
 
 router.delete("/stock/:partNumber", async (req, res): Promise<void> => {
