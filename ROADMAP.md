@@ -13,7 +13,9 @@
 - [x] Serve the real OpenAPI documents from `/api/openapi.json` and `/jobs-api/openapi.json` for n8n import
 
 ## Future Phases
-- [ ] n8n example workflows against the three apps
+- [x] n8n example workflows in `n8n/` (written, not yet run in a live n8n)
+- [ ] Run the n8n workflows against a live instance and fix anything n8n rejects
+- [ ] Status dashboard: an n8n workflow (Webhook trigger) calls `/api/healthz`, `/jobs-api/healthz`, `/api/stock/summary`, `/api/orders/summary` and `/jobs-api/jobs`, checks the three UI URLs (`/`, `/ordering/`, `/jobs/`) return 200, and returns one JSON document; a small page renders it. Optional scheduled run that alerts when a health check fails. Job Manager has no summary endpoint, so count the `/jobs` list.
 
 ## Out of Scope
 - Shared database access between apps

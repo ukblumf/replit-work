@@ -1,0 +1,254 @@
+{
+  "name": "Stock Apps - Create job and add part",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "62df5694-ffd2-51af-9d29-278999a0ac29",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a96476f7-8bba-5921-8a97-7ba1e88aabff",
+              "name": "baseUrl",
+              "value": "https://YOUR-APP-URL",
+              "type": "string"
+            },
+            {
+              "id": "2e7aa655-4905-5605-b3d6-c1d88811b568",
+              "name": "apiKey",
+              "value": "YOUR-API-KEY",
+              "type": "string"
+            },
+            {
+              "id": "d79037b2-86b1-5928-b70b-a87383efe4b3",
+              "name": "client",
+              "value": "Acme Ltd",
+              "type": "string"
+            },
+            {
+              "id": "6f708886-0d43-5285-8706-31f2284ef976",
+              "name": "clientAddress",
+              "value": "1 High Street, Leeds",
+              "type": "string"
+            },
+            {
+              "id": "9cee828a-d6fa-5971-9e40-4b7c13dd69e2",
+              "name": "jobDescription",
+              "value": "Replace pump",
+              "type": "string"
+            },
+            {
+              "id": "3292f456-4c41-52c9-91c8-e194596f4b5d",
+              "name": "partNumber",
+              "value": "PART-001",
+              "type": "string"
+            },
+            {
+              "id": "742f95d9-ee54-5ee9-9037-2a7629f2a63a",
+              "name": "quantity",
+              "value": 10,
+              "type": "number"
+            }
+          ]
+        },
+        "includeOtherFields": false,
+        "options": {}
+      },
+      "id": "267ed0fa-573b-5938-a83f-7fc425be868b",
+      "name": "Config",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        220,
+        300
+      ],
+      "notes": "Edit baseUrl (no trailing slash) and apiKey (STOCK_API_KEY; JOBS_API_KEY if you set one) before running. Use a quantity larger than the stock on hand to see a shortfall Draft order.",
+      "notesInFlow": true
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Config').item.json.baseUrl }}/jobs-api/jobs",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "={{ 'Bearer ' + $('Config').item.json.apiKey }}"
+            }
+          ]
+        },
+        "options": {},
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ jobDate: $now.toFormat('yyyy-MM-dd'), client: $('Config').item.json.client, clientAddress: $('Config').item.json.clientAddress, description: $('Config').item.json.jobDescription }) }}"
+      },
+      "id": "eb0af1f5-20de-5270-87fc-a17d80d460ce",
+      "name": "Create Job",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        440,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Config').item.json.baseUrl }}/jobs-api/jobs/{{ $('Create Job').item.json.jobId }}/parts",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "={{ 'Bearer ' + $('Config').item.json.apiKey }}"
+            }
+          ]
+        },
+        "options": {},
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ partNumber: $('Config').item.json.partNumber, quantity: $('Config').item.json.quantity }) }}"
+      },
+      "id": "7697cda9-b4ab-52a5-9a5e-a9829911d055",
+      "name": "Add Part To Job",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        660,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $('Config').item.json.baseUrl }}/jobs-api/jobs/{{ $('Create Job').item.json.jobId }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "={{ 'Bearer ' + $('Config').item.json.apiKey }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "2ad53bb1-d012-520d-bfb2-f1dc3c2d62c6",
+      "name": "Get Job",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        880,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $('Config').item.json.baseUrl }}/api/orders",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "={{ 'Bearer ' + $('Config').item.json.apiKey }}"
+            }
+          ]
+        },
+        "options": {},
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "reference",
+              "value": "={{ $('Create Job').item.json.jobId }}"
+            }
+          ]
+        }
+      },
+      "id": "a77f9f1f-f575-5b98-a442-a7cab213b072",
+      "name": "Find Shortfall Draft Order",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1100,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Config": {
+      "main": [
+        [
+          {
+            "node": "Create Job",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Job": {
+      "main": [
+        [
+          {
+            "node": "Add Part To Job",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Add Part To Job": {
+      "main": [
+        [
+          {
+            "node": "Get Job",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Job": {
+      "main": [
+        [
+          {
+            "node": "Find Shortfall Draft Order",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "tags": []
+}

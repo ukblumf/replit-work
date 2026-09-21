@@ -1,0 +1,342 @@
+{
+  "name": "Stock Apps - Receive order and check stock",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "62df5694-ffd2-51af-9d29-278999a0ac29",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a96476f7-8bba-5921-8a97-7ba1e88aabff",
+              "name": "baseUrl",
+              "value": "https://YOUR-APP-URL",
+              "type": "string"
+            },
+            {
+              "id": "2e7aa655-4905-5605-b3d6-c1d88811b568",
+              "name": "apiKey",
+              "value": "YOUR-API-KEY",
+              "type": "string"
+            },
+            {
+              "id": "f15d480f-fb44-5593-8b0c-aaf6f4b59e78",
+              "name": "orderNumber",
+              "value": "PO-0001",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": false,
+        "options": {}
+      },
+      "id": "267ed0fa-573b-5938-a83f-7fc425be868b",
+      "name": "Config",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        220,
+        300
+      ],
+      "notes": "Edit baseUrl (no trailing slash) and apiKey (STOCK_API_KEY; JOBS_API_KEY if you set one) before running. Set orderNumber to an order that is not yet Received.",
+      "notesInFlow": true
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $json.baseUrl }}/api/order/{{ $json.orderNumber }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "={{ 'Bearer ' + $('Config').item.json.apiKey }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "0ffcfc7a-80ab-5fdb-af60-232ddf20c0be",
+      "name": "Get Order",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        440,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "027eb444-bfc5-5f85-9f34-eb09aaaad16d",
+              "leftValue": "={{ $json.status }}",
+              "rightValue": "Received",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              }
+            },
+            {
+              "id": "f75162ba-b1f7-590e-ae0d-1a1f497980c4",
+              "leftValue": "={{ $json.status }}",
+              "rightValue": "Cancelled",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "7f8be211-4799-596a-b90a-85be45841bcb",
+      "name": "Can Receive?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        660,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $('Config').item.json.baseUrl }}/api/stock/summary",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "={{ 'Bearer ' + $('Config').item.json.apiKey }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "5c3d5d14-e683-5c99-a50b-9f9bc641af79",
+      "name": "Units Before",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        880,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "={{ $('Config').item.json.baseUrl }}/api/order/{{ $('Config').item.json.orderNumber }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "={{ 'Bearer ' + $('Config').item.json.apiKey }}"
+            }
+          ]
+        },
+        "options": {},
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ status: \"Received\" }) }}"
+      },
+      "id": "14d78833-09eb-5ffa-a187-58b82f19f43a",
+      "name": "Mark Received",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1100,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $('Config').item.json.baseUrl }}/api/stock/summary",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "={{ 'Bearer ' + $('Config').item.json.apiKey }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "15271c11-1643-502b-9184-b39171da5d1d",
+      "name": "Units After",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1320,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "6afccdfe-6277-5a03-a696-25c0b530addb",
+              "name": "orderNumber",
+              "type": "string",
+              "value": "={{ $('Mark Received').item.json.orderNumber }}"
+            },
+            {
+              "id": "3e1dc90b-f366-5650-bce0-6cec82e39b92",
+              "name": "status",
+              "type": "string",
+              "value": "={{ $('Mark Received').item.json.status }}"
+            },
+            {
+              "id": "b06dece7-ea6d-5bba-8fc6-ec5d0a23a4d7",
+              "name": "unitsAdded",
+              "type": "number",
+              "value": "={{ $json.totalUnits - $('Units Before').item.json.totalUnits }}"
+            },
+            {
+              "id": "dc515fd2-fb77-5ecb-b341-8b9aa70fb7f5",
+              "name": "orderLineQuantity",
+              "type": "number",
+              "value": "={{ $('Get Order').item.json.lines.reduce((t, l) => t + l.quantity, 0) }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "6ab9edc7-d534-5125-83f3-def896891e14",
+      "name": "Result",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1540,
+        200
+      ],
+      "notes": "unitsAdded should equal orderLineQuantity unless a line's part number is not in stock (those lines are skipped).",
+      "notesInFlow": true
+    },
+    {
+      "parameters": {},
+      "id": "4c7fc996-78c6-5e4a-86e1-6cbda67e0a87",
+      "name": "Already Received Or Cancelled",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        880,
+        420
+      ]
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Config": {
+      "main": [
+        [
+          {
+            "node": "Get Order",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Order": {
+      "main": [
+        [
+          {
+            "node": "Can Receive?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Units Before": {
+      "main": [
+        [
+          {
+            "node": "Mark Received",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark Received": {
+      "main": [
+        [
+          {
+            "node": "Units After",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Units After": {
+      "main": [
+        [
+          {
+            "node": "Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Can Receive?": {
+      "main": [
+        [
+          {
+            "node": "Units Before",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Already Received Or Cancelled",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "tags": []
+}
