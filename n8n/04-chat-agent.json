@@ -54,7 +54,7 @@
         "promptType": "define",
         "text": "={{ $json.chatInput }}",
         "options": {
-          "systemMessage": "You are the assistant for a small Stock Control, Ordering and Job Manager system. Answer questions by calling the tools; never guess or invent data. You can only read data, not change it.\n\nRules:\n- Part numbers, order numbers (PO-nnnn) and job ids (JOB-nnnn) are matched case-insensitively. If the user gives a partial part number, use Search Stock first.\n- \"Status of part X\": call Get Stock Item (quantity on hand, bin, cost, price), List Orders For Part (which orders contain it, with status; only Draft/Ordered orders are still 'on order', Received ones are already in stock), and find the jobs using it: call List Jobs, then Get Job for each job and keep the ones whose parts include X (report quantity, quantityAllocated and quantityOrdered). Give all three parts in the answer: on stock, on order, used in jobs.\n- \"Summary of stock\": call Stock Summary. The summary only gives a low-stock count (5 units or fewer); if asked which items are low, call Search Stock with an empty-ish broad term such as '-' or a common prefix and list items with quantity 5 or fewer.\n- \"Status of order X\": call Get Order and report supplier, date, status, reference and the lines with quantities.\n- Order summary questions: call Orders Summary.\n- If a tool returns 404, say plainly that the part/order/job was not found. If it returns an error, say so; do not retry more than once.\n- Keep answers short. Use a small table or bullet list for lines and quantities.",
+          "systemMessage": "You are the assistant for a small Stock Control, Ordering and Job Manager system. Answer questions by calling the tools; never guess or invent data. You can only read data, not change it.\n\nRules:\n- Part numbers, order numbers (PO-nnnn) and job ids (JOB-nnnn) are matched case-insensitively. If the user gives a partial part number, use Search Stock first.\n- \"Status of part X\": call Get Stock Item (quantity on hand, bin, cost, price), List Orders For Part (which orders contain it, with status; only Draft/Ordered orders are still 'on order', Received ones are already in stock), and Search Jobs with X as the search text (matches a part number on the job; report quantity, quantityAllocated and quantityOrdered from the matching job's parts via Get Job). Give all three parts in the answer: on stock, on order, used in jobs.\n- \"Summary of stock\": call Stock Summary. If asked which items are low in stock, call List Low Stock Items rather than estimating from the summary's count alone.\n- \"Status of order X\": call Get Order and report supplier, date, status, reference and the lines with quantities.\n- Order summary questions: call Orders Summary.\n- \"List/summary of jobs\": call List Jobs for the full list (no filter) or Search Jobs when the user gives search text (job id, client name or a part number on the job). For totals (job count, part count, total quantity, total value) call Jobs Summary.\n- If a tool returns 404, say plainly that the part/order/job was not found. If it returns an error, say so; do not retry more than once.\n- Keep answers short. Use a small table or bullet list for lines and quantities.",
           "maxIterations": 20
         }
       },
@@ -316,7 +316,7 @@
     {
       "parameters": {
         "toolDescription": "Get one job by job id, including its parts with quantity needed, quantityAllocated (taken from stock) and quantityOrdered (put on a Draft order because stock was short). 404 if not found.",
-        "url": "={{ $('Config').item.json.baseUrl }}/jobs-api/jobs/{jobId}",
+        "url": "={{ $('Config').item.json.baseUrl }}/jobs-api/job/{jobId}",
         "sendHeaders": true,
         "parametersHeaders": {
           "values": [
@@ -344,6 +344,87 @@
       "position": [
         1360,
         760
+      ]
+    },
+    {
+      "parameters": {
+        "toolDescription": "Search jobs by a text match on job id, client name or a part number used on the job. Returns job id, date, client, description and number of parts. Use this instead of List Jobs when the user gives any search text.",
+        "url": "={{ $('Config').item.json.baseUrl }}/jobs-api/jobs?search={search}",
+        "sendHeaders": true,
+        "parametersHeaders": {
+          "values": [
+            {
+              "name": "Authorization",
+              "valueProvider": "fieldValue",
+              "value": "={{ 'Bearer ' + $('Config').item.json.apiKey }}"
+            }
+          ]
+        },
+        "placeholderDefinitions": {
+          "values": [
+            {
+              "name": "search",
+              "description": "Text to match against job id, client name or a part number on the job",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "id": "32c4a313-0797-45cd-b9b3-99f555adcb16",
+      "name": "Search Jobs",
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        1580,
+        760
+      ]
+    },
+    {
+      "parameters": {
+        "toolDescription": "Get overall job totals: job count, total part lines across all jobs, total quantity and total value (part cost fetched from Stock Control). Takes no input.",
+        "url": "={{ $('Config').item.json.baseUrl }}/jobs-api/jobs/summary",
+        "sendHeaders": true,
+        "parametersHeaders": {
+          "values": [
+            {
+              "name": "Authorization",
+              "valueProvider": "fieldValue",
+              "value": "={{ 'Bearer ' + $('Config').item.json.apiKey }}"
+            }
+          ]
+        }
+      },
+      "id": "540fe71c-a081-4c61-a1f4-ef32cbedd67e",
+      "name": "Jobs Summary",
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        1800,
+        760
+      ]
+    },
+    {
+      "parameters": {
+        "toolDescription": "List stock items with 5 or fewer units on hand (the low-stock threshold). Takes no input.",
+        "url": "={{ $('Config').item.json.baseUrl }}/api/stock?maxQuantity=5",
+        "sendHeaders": true,
+        "parametersHeaders": {
+          "values": [
+            {
+              "name": "Authorization",
+              "valueProvider": "fieldValue",
+              "value": "={{ 'Bearer ' + $('Config').item.json.apiKey }}"
+            }
+          ]
+        }
+      },
+      "id": "8f366a5c-3935-4b73-9b60-c389c9c3e2cb",
+      "name": "List Low Stock Items",
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        1580,
+        560
       ]
     }
   ],
@@ -470,6 +551,39 @@
       ]
     },
     "Get Job": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search Jobs": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Jobs Summary": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "List Low Stock Items": {
       "ai_tool": [
         [
           {

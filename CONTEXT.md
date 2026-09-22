@@ -50,8 +50,8 @@ Proof-of-concept apps built to show that automation services such as n8n can dri
 
 ## Current Status
 - Status: In Progress (POC). Job Manager is built, typechecks, and has been tested end to end in the running apps (manual test by the user, all good).
-- Current branch: `feat/api-endpoints-revisit` (API endpoints revisit in progress — typechecks clean; not yet tested live, since the Replit workflow needs to restart to pick up the backend changes; remote is github.com/ukblumf/replit-work)
-- Next: see ROADMAP.md (restart the app to test the new search/summary/health endpoints live; then update the n8n chat agent tools and UIs to use them)
+- Current branch: `feat/api-endpoints-revisit` (API endpoints revisit: backend verified live after a real restart; n8n workflows and UI search/summary wiring done and typecheck clean, but the new UI widgets haven't been visually checked in a browser yet; remote is github.com/ukblumf/replit-work)
+- Next: see ROADMAP.md (eyeball the new UI search/summary widgets, then review and merge `feat/api-endpoints-revisit`)
 
 ## Known Issues
 - Auth bypass (accepted for the POC): `stockApiAuth` skips the API key when `Origin` matches `Host` or `Sec-Fetch-Site` is `same-origin`. Both headers can be forged by any non-browser client, so the API is effectively open. The UIs send no key and depend on this, so removing it breaks them. Decision: leave as-is while this is a private demo; revisit before showing to a client.

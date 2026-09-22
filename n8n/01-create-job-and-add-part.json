@@ -104,7 +104,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "={{ $('Config').item.json.baseUrl }}/jobs-api/jobs/{{ $('Create Job').item.json.jobId }}/parts",
+        "url": "={{ $('Config').item.json.baseUrl }}/jobs-api/job/{{ $('Create Job').item.json.jobId }}/parts",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
@@ -131,7 +131,7 @@
     {
       "parameters": {
         "method": "GET",
-        "url": "={{ $('Config').item.json.baseUrl }}/jobs-api/jobs/{{ $('Create Job').item.json.jobId }}",
+        "url": "={{ $('Config').item.json.baseUrl }}/jobs-api/job/{{ $('Create Job').item.json.jobId }}",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [

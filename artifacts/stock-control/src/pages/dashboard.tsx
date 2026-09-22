@@ -1,20 +1,34 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'wouter';
-import { 
-  useListStockItems, 
+import {
+  useListStockItems,
   useCreateStockItem,
+  useGetStockSummary,
   getListStockItemsQueryKey
 } from '@workspace/api-client-react';
 import { useQueryClient } from '@tanstack/react-query';
-import { Search, Plus, Package, ArrowRight, Loader2 } from 'lucide-react';
+import { Search, Plus, Package, ArrowRight, Loader2, Boxes, PoundSterling, TriangleAlert } from 'lucide-react';
 import { Button, Input, Card, CardContent, CardHeader, CardTitle, Badge, Modal, Label } from '@/components/ui-elements';
 import { useDebounce } from '@/hooks/use-debounce';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 
+const EMPTY_FILTERS = {
+  partNumber: '',
+  supplier: '',
+  description: '',
+  minQuantity: '',
+  maxQuantity: '',
+  minValue: '',
+  maxValue: '',
+};
+
 export default function Dashboard() {
-  const [search, setSearch] = useState('');
-  const debouncedSearch = useDebounce(search, 300);
+  const [filters, setFilters] = useState(EMPTY_FILTERS);
+  const debouncedFilters = useDebounce(filters, 300);
+  const setFilter = (key: keyof typeof EMPTY_FILTERS) => (e: React.ChangeEvent<HTMLInputElement>) =>
+    setFilters((f) => ({ ...f, [key]: e.target.value }));
+
   // The New Part modal is driven by the /new route so the top nav can open it.
   const [location, setLocation] = useLocation();
   const isAddModalOpen = location === '/new';
@@ -22,9 +36,17 @@ export default function Dashboard() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: items, isLoading: isItemsLoading } = useListStockItems(
-    debouncedSearch ? { partNumber: debouncedSearch } : undefined
-  );
+  const { data: summary } = useGetStockSummary();
+
+  const { data: items, isLoading: isItemsLoading } = useListStockItems({
+    partNumber: debouncedFilters.partNumber || undefined,
+    supplier: debouncedFilters.supplier || undefined,
+    description: debouncedFilters.description || undefined,
+    minQuantity: debouncedFilters.minQuantity ? Number(debouncedFilters.minQuantity) : undefined,
+    maxQuantity: debouncedFilters.maxQuantity ? Number(debouncedFilters.maxQuantity) : undefined,
+    minValue: debouncedFilters.minValue ? Number(debouncedFilters.minValue) : undefined,
+    maxValue: debouncedFilters.maxValue ? Number(debouncedFilters.maxValue) : undefined,
+  });
 
   const createItem = useCreateStockItem();
 
@@ -69,21 +91,96 @@ export default function Dashboard() {
           <span>NEW PART</span>
         </Button>
       </div>
+
+      {summary && (
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
+          <StatTile icon={Package} label="Items" value={summary.itemCount} />
+          <StatTile icon={Boxes} label="Units Held" value={summary.totalUnits} />
+          <StatTile icon={PoundSterling} label="Inventory Cost" value={`£${summary.inventoryCost.toFixed(2)}`} />
+          <StatTile icon={PoundSterling} label="Retail Value" value={`£${summary.inventoryRetailValue.toFixed(2)}`} />
+          <StatTile
+            icon={TriangleAlert}
+            label="Low Stock"
+            value={summary.lowStockCount}
+            className={summary.lowStockCount > 0 ? "border-amber-500/50 bg-amber-50 dark:bg-amber-950/20" : undefined}
+          />
+        </div>
+      )}
+
       <Card className="shadow-md">
         <CardHeader className="bg-muted/30 pb-4">
-          <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
-            <CardTitle className="text-xl uppercase flex items-center gap-2">
-              <Package size={20} className="text-primary" />
-              Stock Ledger
-            </CardTitle>
-            <div className="relative w-full sm:w-72">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
-              <Input 
-                placeholder="Search part number..." 
-                className="pl-10 h-10 border-2 uppercase"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-              />
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+              <CardTitle className="text-xl uppercase flex items-center gap-2">
+                <Package size={20} className="text-primary" />
+                Stock Ledger
+              </CardTitle>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={16} />
+                <Input
+                  placeholder="Part number..."
+                  className="pl-9 h-9 border-2 uppercase text-sm"
+                  value={filters.partNumber}
+                  onChange={setFilter('partNumber')}
+                />
+              </div>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={16} />
+                <Input
+                  placeholder="Supplier..."
+                  className="pl-9 h-9 border-2 text-sm"
+                  value={filters.supplier}
+                  onChange={setFilter('supplier')}
+                />
+              </div>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={16} />
+                <Input
+                  placeholder="Description..."
+                  className="pl-9 h-9 border-2 text-sm"
+                  value={filters.description}
+                  onChange={setFilter('description')}
+                />
+              </div>
+              <div className="flex gap-2">
+                <Input
+                  type="number"
+                  placeholder="Min qty"
+                  className="h-9 border-2 text-sm"
+                  value={filters.minQuantity}
+                  onChange={setFilter('minQuantity')}
+                />
+                <Input
+                  type="number"
+                  placeholder="Max qty"
+                  className="h-9 border-2 text-sm"
+                  value={filters.maxQuantity}
+                  onChange={setFilter('maxQuantity')}
+                />
+              </div>
+              <div className="flex gap-2">
+                <Input
+                  type="number"
+                  placeholder="Min value £"
+                  className="h-9 border-2 text-sm"
+                  value={filters.minValue}
+                  onChange={setFilter('minValue')}
+                />
+                <Input
+                  type="number"
+                  placeholder="Max value £"
+                  className="h-9 border-2 text-sm"
+                  value={filters.maxValue}
+                  onChange={setFilter('maxValue')}
+                />
+              </div>
+              {(filters.partNumber || filters.supplier || filters.description || filters.minQuantity || filters.maxQuantity || filters.minValue || filters.maxValue) && (
+                <Button variant="outline" size="sm" className="h-9" onClick={() => setFilters(EMPTY_FILTERS)}>
+                  Clear filters
+                </Button>
+              )}
             </div>
           </div>
         </CardHeader>
@@ -94,6 +191,7 @@ export default function Dashboard() {
                 <tr>
                   <th className="px-6 py-4">Part #</th>
                   <th className="px-6 py-4">Item Name</th>
+                  <th className="px-6 py-4">Supplier</th>
                   <th className="px-6 py-4">Bin</th>
                   <th className="px-6 py-4 text-right">Qty</th>
                   <th className="px-6 py-4 text-right">Cost</th>
@@ -103,14 +201,14 @@ export default function Dashboard() {
               <tbody className="divide-y divide-border/50 bg-card">
                 {isItemsLoading ? (
                   <tr>
-                    <td colSpan={6} className="px-6 py-12 text-center text-muted-foreground">
+                    <td colSpan={7} className="px-6 py-12 text-center text-muted-foreground">
                       <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2" />
                       Loading inventory...
                     </td>
                   </tr>
                 ) : items?.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="px-6 py-12 text-center text-muted-foreground font-mono">
+                    <td colSpan={7} className="px-6 py-12 text-center text-muted-foreground font-mono">
                       No matching parts found in ledger.
                     </td>
                   </tr>
@@ -119,6 +217,7 @@ export default function Dashboard() {
                     <tr key={item.partNumber} className="hover:bg-muted/20 transition-colors group">
                       <td className="px-6 py-3 font-mono font-bold text-primary">{item.partNumber}</td>
                       <td className="px-6 py-3 font-medium">{item.itemName}</td>
+                      <td className="px-6 py-3 text-muted-foreground">{item.supplier || '—'}</td>
                       <td className="px-6 py-3">
                         <Badge variant="outline" className="font-mono bg-background">{item.binNumber}</Badge>
                       </td>
@@ -198,3 +297,21 @@ export default function Dashboard() {
   );
 }
 
+function StatTile({ icon: Icon, label, value, className }: {
+  icon: React.ComponentType<{ size?: number; className?: string }>;
+  label: string;
+  value: string | number;
+  className?: string;
+}) {
+  return (
+    <Card className={cn("shadow-sm", className)}>
+      <CardContent className="p-4 flex items-center gap-3">
+        <Icon size={20} className="text-muted-foreground shrink-0" />
+        <div className="min-w-0">
+          <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground truncate">{label}</p>
+          <p className="text-lg font-black font-mono text-foreground truncate">{value}</p>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}

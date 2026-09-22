@@ -1,10 +1,12 @@
 import { useState } from "react";
 import { Link } from "wouter";
-import { Plus, Search, FileText, Loader2, ArrowRight } from "lucide-react";
-import { useListOrders } from "@workspace/api-client-react";
+import { Plus, Search, FileText, Loader2, ArrowRight, ClipboardList, PackageOpen, PoundSterling } from "lucide-react";
+import { useListOrders, useGetOrderSummary, ListOrdersStatus } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -14,6 +16,26 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { formatCurrency, formatDate } from "@/lib/utils";
+
+const ALL_STATUSES = "all";
+
+function StatTile({ icon: Icon, label, value }: {
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  value: string | number;
+}) {
+  return (
+    <Card>
+      <CardContent className="p-4 flex items-center gap-3">
+        <Icon className="h-5 w-5 text-muted-foreground shrink-0" />
+        <div className="min-w-0">
+          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground truncate">{label}</p>
+          <p className="text-lg font-bold truncate">{value}</p>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
 
 function StatusBadge({ status }: { status: string }) {
   switch (status) {
@@ -35,10 +57,16 @@ function StatusBadge({ status }: { status: string }) {
 export default function OrderList() {
   const [searchOrderNumber, setSearchOrderNumber] = useState("");
   const [searchPartNumber, setSearchPartNumber] = useState("");
+  const [searchSupplier, setSearchSupplier] = useState("");
+  const [status, setStatus] = useState<typeof ALL_STATUSES | ListOrdersStatus>(ALL_STATUSES);
+
+  const { data: summary } = useGetOrderSummary();
 
   const { data: orders, isLoading, error } = useListOrders({
     orderNumber: searchOrderNumber || undefined,
     partNumber: searchPartNumber || undefined,
+    supplier: searchSupplier || undefined,
+    status: status === ALL_STATUSES ? undefined : status,
   });
 
   return (
@@ -56,8 +84,16 @@ export default function OrderList() {
         </Button>
       </div>
 
-      <div className="bg-card rounded-lg border shadow-sm flex flex-col sm:flex-row p-4 gap-4 items-center">
-        <div className="relative flex-1 w-full">
+      {summary && (
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+          <StatTile icon={ClipboardList} label="Total Orders" value={summary.orderCount} />
+          <StatTile icon={PackageOpen} label="Open Orders" value={summary.openOrderCount} />
+          <StatTile icon={PoundSterling} label="Total Value" value={formatCurrency(summary.totalValue)} />
+        </div>
+      )}
+
+      <div className="bg-card rounded-lg border shadow-sm flex flex-col sm:flex-row flex-wrap p-4 gap-4 items-center">
+        <div className="relative flex-1 w-full min-w-[180px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Search by Order Number..."
@@ -66,7 +102,7 @@ export default function OrderList() {
             onChange={(e) => setSearchOrderNumber(e.target.value)}
           />
         </div>
-        <div className="relative flex-1 w-full">
+        <div className="relative flex-1 w-full min-w-[180px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Search by containing Part Number..."
@@ -74,6 +110,30 @@ export default function OrderList() {
             value={searchPartNumber}
             onChange={(e) => setSearchPartNumber(e.target.value)}
           />
+        </div>
+        <div className="relative flex-1 w-full min-w-[180px]">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search by Supplier..."
+            className="pl-9 bg-background"
+            value={searchSupplier}
+            onChange={(e) => setSearchSupplier(e.target.value)}
+          />
+        </div>
+        <div className="w-full sm:w-48">
+          <Select value={status} onValueChange={(v) => setStatus(v as typeof ALL_STATUSES | ListOrdersStatus)}>
+            <SelectTrigger className="bg-background">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={ALL_STATUSES}>All statuses</SelectItem>
+              <SelectItem value="Draft">Draft</SelectItem>
+              <SelectItem value="Submitted">Submitted</SelectItem>
+              <SelectItem value="Confirmed">Confirmed</SelectItem>
+              <SelectItem value="Received">Received</SelectItem>
+              <SelectItem value="Cancelled">Cancelled</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </div>
 

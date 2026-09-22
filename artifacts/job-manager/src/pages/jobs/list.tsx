@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { Link } from "wouter";
-import { Plus, Search, ClipboardList, Loader2, ArrowRight } from "lucide-react";
-import { useListJobs } from "@workspace/jobs-api-client-react";
+import { Plus, Search, ClipboardList, Loader2, ArrowRight, Boxes, PoundSterling, Briefcase } from "lucide-react";
+import { useListJobs, useGetJobSummary } from "@workspace/jobs-api-client-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -12,11 +13,30 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { formatDate } from "@/lib/utils";
+import { formatCurrency, formatDate } from "@/lib/utils";
+
+function StatTile({ icon: Icon, label, value }: {
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  value: string | number;
+}) {
+  return (
+    <Card>
+      <CardContent className="p-4 flex items-center gap-3">
+        <Icon className="h-5 w-5 text-muted-foreground shrink-0" />
+        <div className="min-w-0">
+          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground truncate">{label}</p>
+          <p className="text-lg font-bold truncate">{value}</p>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
 
 export default function JobList() {
   const [search, setSearch] = useState("");
   const { data: jobs, isLoading, error } = useListJobs({ search: search || undefined });
+  const { data: summary } = useGetJobSummary();
 
   return (
     <div className="space-y-6">
@@ -33,11 +53,20 @@ export default function JobList() {
         </Button>
       </div>
 
+      {summary && (
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <StatTile icon={Briefcase} label="Jobs" value={summary.jobCount} />
+          <StatTile icon={ClipboardList} label="Part Lines" value={summary.partCount} />
+          <StatTile icon={Boxes} label="Total Quantity" value={summary.totalQuantity} />
+          <StatTile icon={PoundSterling} label="Total Value" value={formatCurrency(summary.totalValue)} />
+        </div>
+      )}
+
       <div className="bg-card rounded-lg border shadow-sm p-4">
         <div className="relative w-full">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Search by Job Id or Client..."
+            placeholder="Search by Job Id, Client or Part Number..."
             className="pl-9 bg-background"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
