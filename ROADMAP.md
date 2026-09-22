@@ -28,7 +28,7 @@ Decisions made: supplier is a new column on `stock_items` (not looked up through
 - [x] Prerequisites: atomic stock adjust, generated order numbers, add-line endpoint, order `reference`
 - [x] Test in the running apps: create a job, add a part with enough stock, add a part with a shortfall (draft order appears in Ordering with the job id as reference), remove a part
 - [x] Merge `feat/job-manager` to main after testing
-- [-] Same-origin auth bypass: deliberately left as-is for the POC (UIs depend on it). Job Manager and n8n should still send a Bearer key. Revisit before any client demo (options: server-side key injection/proxy, or a key in the UIs)
+- [x] Same-origin auth bypass removed (`feat/require-api-key-auth`): every request now needs a Bearer key; each UI prompts for it once and stores it client-side. See CONTEXT.md Design Decisions.
 - [x] Serve the real OpenAPI documents from `/api/openapi.json` and `/jobs-api/openapi.json` for n8n import
 
 ## Future Phases
