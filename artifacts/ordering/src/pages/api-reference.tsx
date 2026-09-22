@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
-export default function ApiDocs() {
+export default function ApiReference() {
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
       <div>

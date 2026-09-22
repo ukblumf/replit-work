@@ -61,6 +61,7 @@ Proof-of-concept apps built to show that automation services such as n8n can dri
 - Removing a job part does not reduce the quantity already on its Draft order.
 - Low-stock threshold is hardcoded to 5 in the stock summary query.
 - `GET /stock` and `GET /orders` have no pagination.
+- Stock Control and Ordering unintentionally share one Replit-deployed service (`artifacts/api-server`, one `artifact.toml`, port 8080, `/api` prefix) instead of being two independent services; this happened when they were scaffolded via Replit Agent early on. Job Manager is correctly its own separate service (`artifacts/jobs-api`, port 21146, `/jobs-api` prefix). Each Replit-deployed service gets an exclusive path prefix from the platform's application router, which is why Job Manager's API could not simply be renamed to live under `/api` (decided to leave `/jobs-api` as-is rather than add a proxy layer). Splitting Stock/Ordering into separate services, if ever wanted, is not currently planned.
 
 ## Design Decisions
 - One API server hosts stock and orders; apps call it over HTTP.

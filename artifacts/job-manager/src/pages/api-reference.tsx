@@ -32,7 +32,7 @@ const ENDPOINTS = [
 const methodClass = (method: string) =>
   method === "POST" ? "bg-emerald-500" : method === "PATCH" ? "bg-amber-500" : method === "DELETE" ? "bg-red-500" : "";
 
-export default function ApiDocs() {
+export default function ApiReference() {
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
       <div>
