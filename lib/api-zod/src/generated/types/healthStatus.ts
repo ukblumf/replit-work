@@ -5,7 +5,10 @@
  * Authenticated Stock Control and Ordering API. Send the configured API key as a Bearer token in the Authorization header.
  * OpenAPI spec version: 0.1.0
  */
+import type { HealthStatusDatabase } from './healthStatusDatabase';
+import type { HealthStatusStatus } from './healthStatusStatus';
 
 export interface HealthStatus {
-  status: string;
+  status: HealthStatusStatus;
+  database: HealthStatusDatabase;
 }

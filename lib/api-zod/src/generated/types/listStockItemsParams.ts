@@ -11,4 +11,32 @@ export type ListStockItemsParams = {
  * Case-insensitive partial match on Part Number.
  */
 partNumber?: string;
+/**
+ * Case-insensitive partial match on Supplier.
+ */
+supplier?: string;
+/**
+ * Case-insensitive partial match on Description.
+ */
+description?: string;
+/**
+ * Minimum quantity held (inclusive).
+ * @minimum 0
+ */
+minQuantity?: number;
+/**
+ * Maximum quantity held (inclusive).
+ * @minimum 0
+ */
+maxQuantity?: number;
+/**
+ * Minimum value held (quantity * cost, inclusive).
+ * @minimum 0
+ */
+minValue?: number;
+/**
+ * Maximum value held (quantity * cost, inclusive).
+ * @minimum 0
+ */
+maxValue?: number;
 };

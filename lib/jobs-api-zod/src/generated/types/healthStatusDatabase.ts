@@ -7,9 +7,10 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export type ListJobsParams = {
-/**
- * Case-insensitive partial match on Job Id, Client or a Part Number on the job.
- */
-search?: string;
-};
+export type HealthStatusDatabase = typeof HealthStatusDatabase[keyof typeof HealthStatusDatabase];
+
+
+export const HealthStatusDatabase = {
+  ok: 'ok',
+  error: 'error',
+} as const;

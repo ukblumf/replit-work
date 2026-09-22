@@ -10,6 +10,7 @@ export interface StockItem {
   partNumber: string;
   itemName: string;
   description: string;
+  supplier: string;
   /** @minimum 0 */
   quantity: number;
   /** @minimum 0 */

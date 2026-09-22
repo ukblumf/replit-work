@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
-export default function ApiDocs() {
+export default function ApiReference() {
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
       <div>
@@ -41,6 +41,9 @@ export default function ApiDocs() {
             <ul className="list-disc pl-5 text-sm space-y-1 text-muted-foreground">
               <li><code className="text-foreground">orderNumber</code> - Partial match on order number</li>
               <li><code className="text-foreground">partNumber</code> - Returns orders containing this part number in any line</li>
+              <li><code className="text-foreground">reference</code> - Exact match on the order reference (e.g. a Job Manager job id)</li>
+              <li><code className="text-foreground">supplier</code> - Partial match on supplier name</li>
+              <li><code className="text-foreground">status</code> - Exact match on status (Draft, Submitted, Confirmed, Received, Cancelled)</li>
             </ul>
           </CardContent>
         </Card>

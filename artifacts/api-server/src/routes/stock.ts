@@ -16,7 +16,7 @@ import {
   UpdateStockItemResponse,
 } from "@workspace/api-zod";
 import { db, stockItemsTable } from "@workspace/db";
-import { and, asc, eq, ilike, sql } from "drizzle-orm";
+import { and, asc, eq, gte, ilike, lte, sql } from "drizzle-orm";
 import { stockApiAuth } from "../middlewares/stock-api-auth";
 
 const router: IRouter = Router();
@@ -33,14 +33,40 @@ router.get("/stock", async (req, res): Promise<void> => {
     return;
   }
 
+  const filters = [
+    query.data.partNumber
+      ? ilike(stockItemsTable.partNumber, `%${query.data.partNumber}%`)
+      : undefined,
+    query.data.supplier
+      ? ilike(stockItemsTable.supplier, `%${query.data.supplier}%`)
+      : undefined,
+    query.data.description
+      ? ilike(stockItemsTable.description, `%${query.data.description}%`)
+      : undefined,
+    query.data.minQuantity !== undefined
+      ? gte(stockItemsTable.quantity, query.data.minQuantity)
+      : undefined,
+    query.data.maxQuantity !== undefined
+      ? lte(stockItemsTable.quantity, query.data.maxQuantity)
+      : undefined,
+    query.data.minValue !== undefined
+      ? gte(
+          sql`${stockItemsTable.quantity} * ${stockItemsTable.cost}`,
+          query.data.minValue,
+        )
+      : undefined,
+    query.data.maxValue !== undefined
+      ? lte(
+          sql`${stockItemsTable.quantity} * ${stockItemsTable.cost}`,
+          query.data.maxValue,
+        )
+      : undefined,
+  ].filter((filter): filter is NonNullable<typeof filter> => Boolean(filter));
+
   const items = await db
     .select()
     .from(stockItemsTable)
-    .where(
-      query.data.partNumber
-        ? ilike(stockItemsTable.partNumber, `%${query.data.partNumber}%`)
-        : undefined,
-    )
+    .where(filters.length > 0 ? and(...filters) : undefined)
     .orderBy(asc(stockItemsTable.partNumber));
 
   res.json(ListStockItemsResponse.parse(items));

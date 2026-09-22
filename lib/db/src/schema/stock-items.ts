@@ -12,6 +12,7 @@ export const stockItemsTable = pgTable("stock_items", {
   partNumber: text("part_number").primaryKey(),
   itemName: text("item_name").notNull(),
   description: text("description").notNull().default(""),
+  supplier: text("supplier").notNull().default(""),
   quantity: integer("quantity").notNull().default(0),
   cost: doublePrecision("cost").notNull().default(0),
   retailPrice: doublePrecision("retail_price").notNull().default(0),

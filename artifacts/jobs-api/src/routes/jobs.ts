@@ -8,6 +8,7 @@ import {
   DeleteJobParams,
   GetJobParams,
   GetJobResponse,
+  GetJobSummaryResponse,
   ListJobsQueryParams,
   ListJobsResponse,
   RemoveJobPartParams,
@@ -17,7 +18,7 @@ import {
 } from "@workspace/jobs-api-zod";
 import { and, asc, desc, eq, ilike, or, sql } from "drizzle-orm";
 import { db, jobPartsTable, jobsTable, pool } from "../db";
-import { adjustStock } from "../lib/stock-client";
+import { adjustStock, listStock } from "../lib/stock-client";
 import { PartNotFoundError, addPartToJob } from "../services/add-part";
 
 const router: IRouter = Router();
@@ -73,6 +74,7 @@ router.get("/jobs", async (req, res): Promise<void> => {
         ? or(
             ilike(jobsTable.jobId, `%${search}%`),
             ilike(jobsTable.client, `%${search}%`),
+            ilike(jobPartsTable.partNumber, `%${search}%`),
           )
         : undefined,
     )
@@ -106,7 +108,46 @@ router.post("/jobs", async (req, res): Promise<void> => {
   res.status(201).json(CreateJobResponse.parse(await loadJob(jobId)));
 });
 
-router.get("/jobs/:jobId", async (req, res): Promise<void> => {
+// totalValue needs each part's cost, fetched from the Stock Control API (apps integrate over
+// HTTP only, never a shared DB); parts no longer in stock contribute 0.
+router.get("/jobs/summary", async (_req, res): Promise<void> => {
+  const [jobTotals] = await db
+    .select({ jobCount: sql<number>`count(*)::int` })
+    .from(jobsTable);
+
+  const [partTotals] = await db
+    .select({
+      partCount: sql<number>`count(*)::int`,
+      totalQuantity: sql<number>`coalesce(sum(${jobPartsTable.quantity}), 0)::int`,
+    })
+    .from(jobPartsTable);
+
+  const quantityByPart = await db
+    .select({
+      partNumber: jobPartsTable.partNumber,
+      quantity: sql<number>`sum(${jobPartsTable.quantity})::int`,
+    })
+    .from(jobPartsTable)
+    .groupBy(jobPartsTable.partNumber);
+
+  const stockItems = await listStock();
+  const costByPart = new Map(stockItems.map((item) => [item.partNumber, item.cost]));
+  const totalValue = quantityByPart.reduce(
+    (total, row) => total + row.quantity * (costByPart.get(row.partNumber) ?? 0),
+    0,
+  );
+
+  res.json(
+    GetJobSummaryResponse.parse({
+      jobCount: jobTotals?.jobCount ?? 0,
+      partCount: partTotals?.partCount ?? 0,
+      totalQuantity: partTotals?.totalQuantity ?? 0,
+      totalValue,
+    }),
+  );
+});
+
+router.get("/job/:jobId", async (req, res): Promise<void> => {
   const params = GetJobParams.safeParse(req.params);
   if (!params.success) {
     res.status(400).json({ error: params.error.message });
@@ -122,7 +163,7 @@ router.get("/jobs/:jobId", async (req, res): Promise<void> => {
   res.json(GetJobResponse.parse(job));
 });
 
-router.patch("/jobs/:jobId", async (req, res): Promise<void> => {
+router.patch("/job/:jobId", async (req, res): Promise<void> => {
   const params = UpdateJobParams.safeParse(req.params);
   const body = UpdateJobBody.safeParse(req.body);
   if (!params.success || !body.success) {
@@ -147,7 +188,7 @@ router.patch("/jobs/:jobId", async (req, res): Promise<void> => {
   res.json(UpdateJobResponse.parse(await loadJob(params.data.jobId)));
 });
 
-router.delete("/jobs/:jobId", async (req, res): Promise<void> => {
+router.delete("/job/:jobId", async (req, res): Promise<void> => {
   const params = DeleteJobParams.safeParse(req.params);
   if (!params.success) {
     res.status(400).json({ error: params.error.message });
@@ -171,7 +212,7 @@ router.delete("/jobs/:jobId", async (req, res): Promise<void> => {
 });
 
 // Take stock for a part (shortfall goes on a Draft order); see services/add-part.ts.
-router.post("/jobs/:jobId/parts", async (req, res): Promise<void> => {
+router.post("/job/:jobId/parts", async (req, res): Promise<void> => {
   const params = AddJobPartParams.safeParse(req.params);
   const body = AddJobPartBody.safeParse(req.body);
   if (!params.success || !body.success) {
@@ -208,7 +249,7 @@ router.post("/jobs/:jobId/parts", async (req, res): Promise<void> => {
 
 // Return the stock this job took, then remove the part. Quantity already on a Draft order is
 // left on that order.
-router.delete("/jobs/:jobId/parts/:partNumber", async (req, res): Promise<void> => {
+router.delete("/job/:jobId/parts/:partNumber", async (req, res): Promise<void> => {
   const params = RemoveJobPartParams.safeParse(req.params);
   if (!params.success) {
     res.status(400).json({ error: params.error.message });

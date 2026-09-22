@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 const NAV_ITEMS = [
   { href: "/", label: "Jobs", icon: ClipboardList },
   { href: "/new", label: "New Job", icon: Plus },
-  { href: "/api-docs", label: "API Docs", icon: BookOpen },
+  { href: "/api-reference", label: "API Docs", icon: BookOpen },
 ];
 
 export function Layout({ children }: { children: ReactNode }) {

@@ -6,21 +6,22 @@
 
 ## Next Phase: revisit the API endpoints
 Give all three apps the same shape: health, summary, CRUD and search. Update `openapi.yaml` / `jobs-openapi.yaml` first, then run codegen.
-- [ ] Health: keep `/healthz` (decided; the `z` is just the Google/Kubernetes convention). Every app reports that it is functioning: `/api/healthz`, `/jobs-api/healthz` exist; check whether they should also confirm DB connectivity
-- [ ] Summary per app:
-  - Stock: total number of parts held and total value. `GET /stock/summary` has `itemCount`, `totalUnits`, `inventoryCost`, `inventoryRetailValue`, `lowStockCount`; verify it covers this
-  - Ordering: total number of orders and total value. `GET /orders/summary` exists; verify it includes total value
-  - Jobs: total number of parts and total value. New `GET /jobs-api/summary` (none today); value needs stock cost, fetched through the Stock API (apps integrate over HTTP only)
-- [ ] CRUD per app: Stock and Ordering have it, Jobs has it for jobs. Review for gaps and consistency (Ordering uses singular `/order/:orderNumber` for single items; decide whether to keep)
-- [ ] Search per app, partial and complete match, case-insensitive:
-  - Stock: by part number, supplier, description, quantity held, value held
-  - Ordering: by order number, part number, supplier, status
-  - Jobs: by job number, part number, client name (this replaces the optional `GET /jobs?partNumber=` item below)
-- [ ] Open decisions:
-  - `stock_items` has no supplier column: add one, or look suppliers up through orders?
-  - Search as a dedicated `/search` endpoint or as query params on the list endpoints (today `GET /stock` and `GET /orders` filter by `partNumber` / `orderNumber` / `reference`, `GET /jobs` by `search`)?
-  - Quantity and value search semantics: exact match, or min/max range?
-- [ ] Afterwards: update the n8n chat agent tools (`n8n/04-chat-agent.json`) and the CONTEXT.md API sections to use the new endpoints
+
+Decisions made: supplier is a new column on `stock_items` (not looked up through orders); search is query params on the existing list endpoints, not a dedicated `/search`; quantity/value search is min/max range; `/healthz` now also confirms DB connectivity; `/order/:orderNumber` stays singular as-is; Jobs' single-item routes were renamed `/jobs/:jobId` → `/job/:jobId` to match the plural-list/singular-item pattern (list/create `GET POST /jobs` unchanged).
+
+- [x] Health: `/api/healthz` and `/jobs-api/healthz` now return `{status, database}` and 503 if the DB check fails
+- [x] Summary per app:
+  - Stock: `GET /stock/summary` unchanged (`itemCount`, `totalUnits`, `inventoryCost`, `inventoryRetailValue`, `lowStockCount`) — already covered this
+  - Ordering: `GET /orders/summary` unchanged (`orderCount`, `openOrderCount`, `totalValue`, `statusCounts`) — already covered this
+  - Jobs: new `GET /jobs-api/jobs/summary` (`jobCount`, `partCount`, `totalQuantity`, `totalValue`); totalValue fetches stock cost per part via the Stock API
+- [x] CRUD per app: reviewed; Ordering keeps singular `/order/:orderNumber` (decision above), Jobs' single-item routes renamed to `/job/:jobId` for consistency with Stock/Ordering
+- [x] Search per app, partial and complete match, case-insensitive:
+  - Stock: `GET /stock` now takes `partNumber`, `supplier`, `description` (partial match) and `minQuantity`/`maxQuantity`/`minValue`/`maxValue` (range)
+  - Ordering: `GET /orders` now also takes `supplier` (partial match) and `status` (exact match), alongside existing `orderNumber`/`partNumber` (partial) and `reference` (exact)
+  - Jobs: `GET /jobs`'s existing `search` param now also matches a Part Number on the job, alongside Job Id and Client (replaces the optional `GET /jobs?partNumber=` item below)
+- [x] Verified live after a real restart: `/api/healthz` and `/jobs-api/healthz` both return `{status, database}`; stock create/search with `supplier` and value-range search confirmed; orders `status`/`supplier` filters accepted; old `/jobs-api/jobs/:jobId` 404s, new `/jobs-api/job/:jobId` and `/jobs-api/jobs/summary` work; job search by part number confirmed
+- [x] n8n workflows updated: `01-create-job-and-add-part.json`'s two `/jobs-api/jobs/{jobId}` references renamed to `/job/{jobId}`; `04-chat-agent.json`'s `Get Job` tool fixed the same way, plus three new tools added (`Search Jobs` using the `search` param, `Jobs Summary`, `List Low Stock Items` using `maxQuantity`) and the system prompt updated to use them (both JSON files validated: no dangling connections, no duplicate node ids)
+- [x] UI search/summary wiring: Stock Control dashboard gets summary stat tiles and supplier/description/quantity-range/value-range filters plus a Supplier column; Ordering list gets summary stat tiles and supplier/status filters; Job Manager list gets summary stat tiles and search now covers part number. All typecheck clean; API layer verified live in the prior step, but the new UI widgets have not been visually checked in a browser (dev servers are live with HMR if you want to eyeball them)
 
 ## Next Phase: prove Job Manager end to end
 - [x] Job Manager API and UI built (`feat/job-manager`)

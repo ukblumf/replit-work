@@ -13,7 +13,7 @@ import { Layout } from '@/components/layout';
 import OrderList from '@/pages/orders/list';
 import OrderForm from '@/pages/orders/form';
 import OrderDetail from '@/pages/orders/detail';
-import ApiDocs from '@/pages/api-docs';
+import ApiReference from '@/pages/api-reference';
 
 const queryClient = new QueryClient();
 
@@ -35,7 +35,7 @@ function Router() {
           <Route path="/" component={OrderList} />
           <Route path="/orders/new" component={OrderForm} />
           <Route path="/orders/:orderNumber" component={OrderDetail} />
-          <Route path="/api-docs" component={ApiDocs} />
+          <Route path="/api-reference" component={ApiReference} />
           <Route component={NotFound} />
         </Switch>
       </RoutedErrorBoundary>

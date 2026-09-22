@@ -13,7 +13,7 @@ import { Layout } from '@/components/layout';
 import JobList from '@/pages/jobs/list';
 import JobForm from '@/pages/jobs/form';
 import JobDetail from '@/pages/jobs/detail';
-import ApiDocs from '@/pages/api-docs';
+import ApiReference from '@/pages/api-reference';
 
 const queryClient = new QueryClient();
 
@@ -33,7 +33,7 @@ function Router() {
         <Switch>
           <Route path="/" component={JobList} />
           <Route path="/new" component={JobForm} />
-          <Route path="/api-docs" component={ApiDocs} />
+          <Route path="/api-reference" component={ApiReference} />
           <Route path="/:jobId" component={JobDetail} />
           <Route component={NotFound} />
         </Switch>
