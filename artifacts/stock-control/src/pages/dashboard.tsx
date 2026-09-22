@@ -35,6 +35,7 @@ export default function Dashboard() {
       partNumber: formData.get('partNumber') as string,
       itemName: formData.get('itemName') as string,
       description: formData.get('description') as string,
+      supplier: formData.get('supplier') as string,
       quantity: Number(formData.get('quantity')),
       cost: Number(formData.get('cost')),
       retailPrice: Number(formData.get('retailPrice')),
@@ -171,7 +172,10 @@ export default function Dashboard() {
               <Label htmlFor="quantity">Initial Quantity</Label>
               <Input id="quantity" name="quantity" type="number" min="0" required defaultValue="0" />
             </div>
-            <div className="space-y-2 col-span-2 sm:col-span-1"></div>
+            <div className="space-y-2 col-span-2 sm:col-span-1">
+              <Label htmlFor="supplier">Supplier (Optional)</Label>
+              <Input id="supplier" name="supplier" placeholder="e.g. Acme Fasteners" />
+            </div>
             <div className="space-y-2 col-span-2 sm:col-span-1">
               <Label htmlFor="cost">Unit Cost (£)</Label>
               <Input id="cost" name="cost" type="number" step="0.01" min="0" required defaultValue="0.00" />

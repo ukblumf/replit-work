@@ -10,6 +10,7 @@ export interface StockItemUpdate {
   /** @minLength 1 */
   itemName?: string;
   description?: string;
+  supplier?: string;
   /** @minimum 0 */
   quantity?: number;
   /** @minimum 0 */

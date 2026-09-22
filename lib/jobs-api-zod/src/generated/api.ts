@@ -10,10 +10,12 @@ import * as zod from 'zod';
 
 
 /**
+ * Returns server health status, including database connectivity.
  * @summary Health check
  */
 export const HealthCheckResponse = zod.object({
-  "status": zod.string()
+  "status": zod.enum(['ok', 'error']),
+  "database": zod.enum(['ok', 'error'])
 })
 
 
@@ -39,7 +41,7 @@ export const ListPartsResponse = zod.array(ListPartsResponseItem)
  * @summary List jobs
  */
 export const ListJobsQueryParams = zod.object({
-  "search": zod.coerce.string().optional().describe('Case-insensitive partial match on Job Id or Client.')
+  "search": zod.coerce.string().optional().describe('Case-insensitive partial match on Job Id, Client or a Part Number on the job.')
 })
 
 export const ListJobsResponseItem = zod.object({
@@ -89,6 +91,18 @@ export const CreateJobResponse = zod.object({
 })),
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date()
+})
+
+
+/**
+ * Returns totals across all jobs. totalValue is computed from the current Stock Control cost of each allocated/ordered part, fetched over the Stock Control API.
+ * @summary Get job summary
+ */
+export const GetJobSummaryResponse = zod.object({
+  "jobCount": zod.number().int().describe('Total number of jobs.'),
+  "partCount": zod.number().int().describe('Total number of part lines across all jobs.'),
+  "totalQuantity": zod.number().int().describe('Sum of quantity across all job parts.'),
+  "totalValue": zod.number().describe('Sum of quantity * Stock Control cost across all job parts. Parts no longer in stock contribute 0.')
 })
 
 

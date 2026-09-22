@@ -5,8 +5,25 @@
  * Authenticated Stock Control and Ordering API. Send the configured API key as a Bearer token in the Authorization header.
  * OpenAPI spec version: 0.1.0
  */
+export type HealthStatusStatus = typeof HealthStatusStatus[keyof typeof HealthStatusStatus];
+
+
+export const HealthStatusStatus = {
+  ok: 'ok',
+  error: 'error',
+} as const;
+
+export type HealthStatusDatabase = typeof HealthStatusDatabase[keyof typeof HealthStatusDatabase];
+
+
+export const HealthStatusDatabase = {
+  ok: 'ok',
+  error: 'error',
+} as const;
+
 export interface HealthStatus {
-  status: string;
+  status: HealthStatusStatus;
+  database: HealthStatusDatabase;
 }
 
 export interface StockAdjustment {
@@ -24,6 +41,7 @@ export interface StockItem {
   partNumber: string;
   itemName: string;
   description: string;
+  supplier: string;
   /** @minimum 0 */
   quantity: number;
   /** @minimum 0 */
@@ -41,6 +59,7 @@ export interface StockItemInput {
   /** @minLength 1 */
   itemName: string;
   description: string;
+  supplier: string;
   /** @minimum 0 */
   quantity: number;
   /** @minimum 0 */
@@ -55,6 +74,7 @@ export interface StockItemUpdate {
   /** @minLength 1 */
   itemName?: string;
   description?: string;
+  supplier?: string;
   /** @minimum 0 */
   quantity?: number;
   /** @minimum 0 */
@@ -237,6 +257,34 @@ export type ListStockItemsParams = {
  * Case-insensitive partial match on Part Number.
  */
 partNumber?: string;
+/**
+ * Case-insensitive partial match on Supplier.
+ */
+supplier?: string;
+/**
+ * Case-insensitive partial match on Description.
+ */
+description?: string;
+/**
+ * Minimum quantity held (inclusive).
+ * @minimum 0
+ */
+minQuantity?: number;
+/**
+ * Maximum quantity held (inclusive).
+ * @minimum 0
+ */
+maxQuantity?: number;
+/**
+ * Minimum value held (quantity * cost, inclusive).
+ * @minimum 0
+ */
+minValue?: number;
+/**
+ * Maximum value held (quantity * cost, inclusive).
+ * @minimum 0
+ */
+maxValue?: number;
 };
 
 export type ListOrdersParams = {
@@ -252,5 +300,24 @@ partNumber?: string;
  * Exact match on the order Reference (e.g. a Job Manager job id).
  */
 reference?: string;
+/**
+ * Case-insensitive partial match on Supplier Name.
+ */
+supplier?: string;
+/**
+ * Exact match on Status.
+ */
+status?: ListOrdersStatus;
 };
+
+export type ListOrdersStatus = typeof ListOrdersStatus[keyof typeof ListOrdersStatus];
+
+
+export const ListOrdersStatus = {
+  Draft: 'Draft',
+  Submitted: 'Submitted',
+  Confirmed: 'Confirmed',
+  Received: 'Received',
+  Cancelled: 'Cancelled',
+} as const;
 

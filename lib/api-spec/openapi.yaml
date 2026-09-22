@@ -22,10 +22,16 @@ paths:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
+      description: Returns server health status, including database connectivity.
       responses:
         "200":
           description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+        "503":
+          description: Database unreachable
           content:
             application/json:
               schema:
@@ -35,7 +41,9 @@ paths:
       operationId: listStockItems
       tags: [stock]
       summary: List stock items
-      description: Returns all stock items, optionally filtered by part number.
+      description: >
+        Returns stock items, optionally filtered by part number, supplier, description
+        (each a case-insensitive partial match) and/or a quantity or value range.
       parameters:
         - name: partNumber
           in: query
@@ -43,6 +51,46 @@ paths:
           schema:
             type: string
           description: Case-insensitive partial match on Part Number.
+        - name: supplier
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Case-insensitive partial match on Supplier.
+        - name: description
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Case-insensitive partial match on Description.
+        - name: minQuantity
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+          description: Minimum quantity held (inclusive).
+        - name: maxQuantity
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+          description: Maximum quantity held (inclusive).
+        - name: minValue
+          in: query
+          required: false
+          schema:
+            type: number
+            minimum: 0
+          description: Minimum value held (quantity * cost, inclusive).
+        - name: maxValue
+          in: query
+          required: false
+          schema:
+            type: number
+            minimum: 0
+          description: Maximum value held (quantity * cost, inclusive).
       responses:
         "200":
           description: Stock items
@@ -193,7 +241,9 @@ paths:
       operationId: listOrders
       tags: [orders]
       summary: List purchase orders
-      description: Returns purchase orders, optionally filtered by order number or a contained part number.
+      description: >
+        Returns purchase orders, optionally filtered by order number, a contained part number,
+        reference, supplier or status.
       parameters:
         - name: orderNumber
           in: query
@@ -213,6 +263,19 @@ paths:
           schema:
             type: string
           description: Exact match on the order Reference (e.g. a Job Manager job id).
+        - name: supplier
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Case-insensitive partial match on Supplier Name.
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [Draft, Submitted, Confirmed, Received, Cancelled]
+          description: Exact match on Status.
       responses:
         "200":
           description: Purchase order summaries
@@ -407,8 +470,13 @@ components:
       properties:
         status:
           type: string
+          enum: [ok, error]
+        database:
+          type: string
+          enum: [ok, error]
       required:
         - status
+        - database
     StockAdjustment:
       type: object
       properties:
@@ -437,6 +505,8 @@ components:
           type: string
         description:
           type: string
+        supplier:
+          type: string
         quantity:
           type: integer
           minimum: 0
@@ -458,6 +528,7 @@ components:
         - partNumber
         - itemName
         - description
+        - supplier
         - quantity
         - cost
         - retailPrice
@@ -475,6 +546,8 @@ components:
           minLength: 1
         description:
           type: string
+        supplier:
+          type: string
         quantity:
           type: integer
           minimum: 0
@@ -491,6 +564,7 @@ components:
         - partNumber
         - itemName
         - description
+        - supplier
         - quantity
         - cost
         - retailPrice
@@ -502,6 +576,8 @@ components:
           type: string
           minLength: 1
         description:
+          type: string
+        supplier:
           type: string
         quantity:
           type: integer

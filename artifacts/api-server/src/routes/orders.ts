@@ -132,6 +132,10 @@ router.get("/orders", async (req, res): Promise<void> => {
     query.data.reference
       ? eq(ordersTable.reference, query.data.reference)
       : undefined,
+    query.data.supplier
+      ? ilike(ordersTable.supplierName, `%${query.data.supplier}%`)
+      : undefined,
+    query.data.status ? eq(ordersTable.status, query.data.status) : undefined,
   ].filter((filter): filter is NonNullable<typeof filter> => Boolean(filter));
 
   const orders = await db

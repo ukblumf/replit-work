@@ -9,20 +9,37 @@ import * as zod from 'zod';
 
 
 /**
- * Returns server health status
+ * Returns server health status, including database connectivity.
  * @summary Health check
  */
 export const HealthCheckResponse = zod.object({
-  "status": zod.string()
+  "status": zod.enum(['ok', 'error']),
+  "database": zod.enum(['ok', 'error'])
 })
 
 
 /**
- * Returns all stock items, optionally filtered by part number.
+ * Returns stock items, optionally filtered by part number, supplier, description (each a case-insensitive partial match) and/or a quantity or value range.
  * @summary List stock items
  */
+export const listStockItemsQueryMinQuantityMin = 0;
+
+export const listStockItemsQueryMaxQuantityMin = 0;
+
+export const listStockItemsQueryMinValueMin = 0;
+
+export const listStockItemsQueryMaxValueMin = 0;
+
+
+
 export const ListStockItemsQueryParams = zod.object({
-  "partNumber": zod.coerce.string().optional().describe('Case-insensitive partial match on Part Number.')
+  "partNumber": zod.coerce.string().optional().describe('Case-insensitive partial match on Part Number.'),
+  "supplier": zod.coerce.string().optional().describe('Case-insensitive partial match on Supplier.'),
+  "description": zod.coerce.string().optional().describe('Case-insensitive partial match on Description.'),
+  "minQuantity": zod.coerce.number().int().min(listStockItemsQueryMinQuantityMin).optional().describe('Minimum quantity held (inclusive).'),
+  "maxQuantity": zod.coerce.number().int().min(listStockItemsQueryMaxQuantityMin).optional().describe('Maximum quantity held (inclusive).'),
+  "minValue": zod.coerce.number().min(listStockItemsQueryMinValueMin).optional().describe('Minimum value held (quantity * cost, inclusive).'),
+  "maxValue": zod.coerce.number().min(listStockItemsQueryMaxValueMin).optional().describe('Maximum value held (quantity * cost, inclusive).')
 })
 
 export const listStockItemsResponseQuantityMin = 0;
@@ -37,6 +54,7 @@ export const ListStockItemsResponseItem = zod.object({
   "partNumber": zod.string(),
   "itemName": zod.string(),
   "description": zod.string(),
+  "supplier": zod.string(),
   "quantity": zod.number().int().min(listStockItemsResponseQuantityMin),
   "cost": zod.number().min(listStockItemsResponseCostMin),
   "retailPrice": zod.number().min(listStockItemsResponseRetailPriceMin),
@@ -65,6 +83,7 @@ export const CreateStockItemBody = zod.object({
   "partNumber": zod.string().min(1),
   "itemName": zod.string().min(1),
   "description": zod.string(),
+  "supplier": zod.string(),
   "quantity": zod.number().int().min(createStockItemBodyQuantityMin),
   "cost": zod.number().min(createStockItemBodyCostMin),
   "retailPrice": zod.number().min(createStockItemBodyRetailPriceMin),
@@ -83,6 +102,7 @@ export const CreateStockItemResponse = zod.object({
   "partNumber": zod.string(),
   "itemName": zod.string(),
   "description": zod.string(),
+  "supplier": zod.string(),
   "quantity": zod.number().int().min(createStockItemResponseQuantityMin),
   "cost": zod.number().min(createStockItemResponseCostMin),
   "retailPrice": zod.number().min(createStockItemResponseRetailPriceMin),
@@ -127,6 +147,7 @@ export const GetStockItemResponse = zod.object({
   "partNumber": zod.string(),
   "itemName": zod.string(),
   "description": zod.string(),
+  "supplier": zod.string(),
   "quantity": zod.number().int().min(getStockItemResponseQuantityMin),
   "cost": zod.number().min(getStockItemResponseCostMin),
   "retailPrice": zod.number().min(getStockItemResponseRetailPriceMin),
@@ -159,6 +180,7 @@ export const updateStockItemBodyRetailPriceMin = 0;
 export const UpdateStockItemBody = zod.object({
   "itemName": zod.string().min(1).optional(),
   "description": zod.string().optional(),
+  "supplier": zod.string().optional(),
   "quantity": zod.number().int().min(updateStockItemBodyQuantityMin).optional(),
   "cost": zod.number().min(updateStockItemBodyCostMin).optional(),
   "retailPrice": zod.number().min(updateStockItemBodyRetailPriceMin).optional(),
@@ -177,6 +199,7 @@ export const UpdateStockItemResponse = zod.object({
   "partNumber": zod.string(),
   "itemName": zod.string(),
   "description": zod.string(),
+  "supplier": zod.string(),
   "quantity": zod.number().int().min(updateStockItemResponseQuantityMin),
   "cost": zod.number().min(updateStockItemResponseCostMin),
   "retailPrice": zod.number().min(updateStockItemResponseRetailPriceMin),
@@ -226,6 +249,7 @@ export const AdjustStockQuantityResponse = zod.object({
   "partNumber": zod.string(),
   "itemName": zod.string(),
   "description": zod.string(),
+  "supplier": zod.string(),
   "quantity": zod.number().int().min(adjustStockQuantityResponseQuantityMin),
   "cost": zod.number().min(adjustStockQuantityResponseCostMin),
   "retailPrice": zod.number().min(adjustStockQuantityResponseRetailPriceMin),
@@ -236,13 +260,15 @@ export const AdjustStockQuantityResponse = zod.object({
 
 
 /**
- * Returns purchase orders, optionally filtered by order number or a contained part number.
+ * Returns purchase orders, optionally filtered by order number, a contained part number, reference, supplier or status.
  * @summary List purchase orders
  */
 export const ListOrdersQueryParams = zod.object({
   "orderNumber": zod.coerce.string().optional().describe('Case-insensitive partial match on Order Number.'),
   "partNumber": zod.coerce.string().optional().describe('Case-insensitive partial match on a line Part Number.'),
-  "reference": zod.coerce.string().optional().describe('Exact match on the order Reference (e.g. a Job Manager job id).')
+  "reference": zod.coerce.string().optional().describe('Exact match on the order Reference (e.g. a Job Manager job id).'),
+  "supplier": zod.coerce.string().optional().describe('Case-insensitive partial match on Supplier Name.'),
+  "status": zod.enum(['Draft', 'Submitted', 'Confirmed', 'Received', 'Cancelled']).optional().describe('Exact match on Status.')
 })
 
 export const listOrdersResponseTotalValueMin = 0;

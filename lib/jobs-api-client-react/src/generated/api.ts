@@ -29,6 +29,7 @@ import type {
   JobPart,
   JobPartInput,
   JobSummary,
+  JobSummaryTotals,
   JobUpdate,
   ListJobsParams,
   ListPartsParams,
@@ -74,6 +75,7 @@ export const getHealthCheckUrl = () => {
 }
 
 /**
+ * Returns server health status, including database connectivity.
  * @summary Health check
  */
 export const healthCheck = async ( options?: Parameters<typeof customFetch>[1]): Promise<HealthStatus> => {
@@ -98,7 +100,7 @@ export const getHealthCheckQueryKey = () => {
     }
 
 
-export const getHealthCheckQueryOptions = <TData = Awaited<ReturnType<typeof healthCheck>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof healthCheck>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getHealthCheckQueryOptions = <TData = Awaited<ReturnType<typeof healthCheck>>, TError = ErrorType<HealthStatus>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof healthCheck>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -117,14 +119,14 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 }
 
 export type HealthCheckQueryResult = NonNullable<Awaited<ReturnType<typeof healthCheck>>>
-export type HealthCheckQueryError = ErrorType<unknown>
+export type HealthCheckQueryError = ErrorType<HealthStatus>
 
 
 /**
  * @summary Health check
  */
 
-export function useHealthCheck<TData = Awaited<ReturnType<typeof healthCheck>>, TError = ErrorType<unknown>>(
+export function useHealthCheck<TData = Awaited<ReturnType<typeof healthCheck>>, TError = ErrorType<HealthStatus>>(
   options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof healthCheck>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
@@ -400,12 +402,90 @@ export const useCreateJob = <TError = ErrorType<BadRequestResponse | Unauthorize
       return useMutation(getCreateJobMutationOptions(options));
     }
 
+export const getGetJobSummaryUrl = () => {
+
+
+
+
+  return `/jobs-api/jobs/summary`
+}
+
+/**
+ * Returns totals across all jobs. totalValue is computed from the current Stock Control cost of each allocated/ordered part, fetched over the Stock Control API.
+ * @summary Get job summary
+ */
+export const getJobSummary = async ( options?: Parameters<typeof customFetch>[1]): Promise<JobSummaryTotals> => {
+
+  return customFetch<JobSummaryTotals>(getGetJobSummaryUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetJobSummaryQueryKey = () => {
+    return [
+    `/jobs-api/jobs/summary`
+    ] as const;
+    }
+
+
+export const getGetJobSummaryQueryOptions = <TData = Awaited<ReturnType<typeof getJobSummary>>, TError = ErrorType<UnauthorizedResponse>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getJobSummary>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetJobSummaryQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getJobSummary>>> = ({ signal }) => getJobSummary({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getJobSummary>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetJobSummaryQueryResult = NonNullable<Awaited<ReturnType<typeof getJobSummary>>>
+export type GetJobSummaryQueryError = ErrorType<UnauthorizedResponse>
+
+
+/**
+ * @summary Get job summary
+ */
+
+export function useGetJobSummary<TData = Awaited<ReturnType<typeof getJobSummary>>, TError = ErrorType<UnauthorizedResponse>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getJobSummary>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetJobSummaryQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
 export const getGetJobUrl = (jobId: string,) => {
 
 
 
 
-  return `/jobs-api/jobs/${jobId}`
+  return `/jobs-api/job/${jobId}`
 }
 
 /**
@@ -428,7 +508,7 @@ export const getJob = async (jobId: string, options?: Parameters<typeof customFe
 
 export const getGetJobQueryKey = (jobId: string,) => {
     return [
-    `/jobs-api/jobs/${jobId}`
+    `/jobs-api/job/${jobId}`
     ] as const;
     }
 
@@ -482,7 +562,7 @@ export const getUpdateJobUrl = (jobId: string,) => {
 
 
 
-  return `/jobs-api/jobs/${jobId}`
+  return `/jobs-api/job/${jobId}`
 }
 
 /**
@@ -572,7 +652,7 @@ export const getDeleteJobUrl = (jobId: string,) => {
 
 
 
-  return `/jobs-api/jobs/${jobId}`
+  return `/jobs-api/job/${jobId}`
 }
 
 /**
@@ -647,7 +727,7 @@ export const getAddJobPartUrl = (jobId: string,) => {
 
 
 
-  return `/jobs-api/jobs/${jobId}/parts`
+  return `/jobs-api/job/${jobId}/parts`
 }
 
 /**
@@ -738,7 +818,7 @@ export const getRemoveJobPartUrl = (jobId: string,
 
 
 
-  return `/jobs-api/jobs/${jobId}/parts/${partNumber}`
+  return `/jobs-api/job/${jobId}/parts/${partNumber}`
 }
 
 /**

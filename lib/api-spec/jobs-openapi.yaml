@@ -25,10 +25,17 @@ paths:
       operationId: healthCheck
       tags: [health]
       summary: Health check
+      description: Returns server health status, including database connectivity.
       security: []
       responses:
         "200":
           description: Service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+        "503":
+          description: Database unreachable
           content:
             application/json:
               schema:
@@ -70,7 +77,7 @@ paths:
           required: false
           schema:
             type: string
-          description: Case-insensitive partial match on Job Id or Client.
+          description: Case-insensitive partial match on Job Id, Client or a Part Number on the job.
       responses:
         "200":
           description: Job summaries
@@ -104,7 +111,24 @@ paths:
           $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
-  /jobs/{jobId}:
+  /jobs/summary:
+    get:
+      operationId: getJobSummary
+      tags: [jobs]
+      summary: Get job summary
+      description: >
+        Returns totals across all jobs. totalValue is computed from the current Stock Control
+        cost of each allocated/ordered part, fetched over the Stock Control API.
+      responses:
+        "200":
+          description: Job summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JobSummaryTotals"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /job/{jobId}:
     get:
       operationId: getJob
       tags: [jobs]
@@ -168,7 +192,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
-  /jobs/{jobId}/parts:
+  /job/{jobId}/parts:
     post:
       operationId: addJobPart
       tags: [jobs]
@@ -205,7 +229,7 @@ paths:
                 $ref: "#/components/schemas/Error"
         "502":
           $ref: "#/components/responses/UpstreamFailure"
-  /jobs/{jobId}/parts/{partNumber}:
+  /job/{jobId}/parts/{partNumber}:
     delete:
       operationId: removeJobPart
       tags: [jobs]
@@ -280,8 +304,13 @@ components:
       properties:
         status:
           type: string
+          enum: [ok, error]
+        database:
+          type: string
+          enum: [ok, error]
       required:
         - status
+        - database
     Error:
       type: object
       properties:
@@ -435,3 +464,23 @@ components:
         - client
         - description
         - partCount
+    JobSummaryTotals:
+      type: object
+      properties:
+        jobCount:
+          type: integer
+          description: Total number of jobs.
+        partCount:
+          type: integer
+          description: Total number of part lines across all jobs.
+        totalQuantity:
+          type: integer
+          description: Sum of quantity across all job parts.
+        totalValue:
+          type: number
+          description: Sum of quantity * Stock Control cost across all job parts. Parts no longer in stock contribute 0.
+      required:
+        - jobCount
+        - partCount
+        - totalQuantity
+        - totalValue

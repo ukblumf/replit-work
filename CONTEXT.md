@@ -26,21 +26,22 @@ Proof-of-concept apps built to show that automation services such as n8n can dri
 
 ## API (all under `/api`)
 - `GET/POST /stock`, `GET /stock/summary`, `GET/PATCH/DELETE /stock/:partNumber`, `POST /stock/:partNumber/adjust` (atomic `quantityDelta`; 409 `{error, available}` if it would go below zero)
-- `GET/POST /orders` (`?reference=` filter; `orderNumber` optional on POST, server generates `PO-nnnn`), `GET /orders/summary`, `GET/PATCH/DELETE /order/:orderNumber` (note singular `/order/` for single items), `POST /order/:orderNumber/lines` (append a line to a Draft order; adds to quantity if the part is already on it; 409 if not Draft)
-- `GET /healthz`, `GET /openapi.json` (public; the real contract from `openapi.yaml`, with `servers` set to the request's absolute URL for n8n import)
+- `GET /stock` search/filter query params: `partNumber`, `supplier`, `description` (each case-insensitive partial match), `minQuantity`/`maxQuantity`, `minValue`/`maxValue` (value = quantity * cost; all range bounds inclusive and optional)
+- `GET/POST /orders` (`orderNumber`/`partNumber` partial match, `reference` exact match, `supplier` partial match, `status` exact match; `orderNumber` optional on POST, server generates `PO-nnnn`), `GET /orders/summary`, `GET/PATCH/DELETE /order/:orderNumber` (note singular `/order/` for single items — kept intentionally, see Design Decisions), `POST /order/:orderNumber/lines` (append a line to a Draft order; adds to quantity if the part is already on it; 409 if not Draft)
+- `GET /healthz` (also confirms DB connectivity: `{status, database}`, 503 if the DB check fails), `GET /openapi.json` (public; the real contract from `openapi.yaml`, with `servers` set to the request's absolute URL for n8n import)
 - Auth: `Authorization: Bearer <key>`; key is `STOCK_API_KEY`, falling back to `SESSION_SECRET`.
 - Setting an order to `Received` via `PATCH /order/:orderNumber` adds each line's quantity to matching stock items in the same transaction (only on the transition into Received; lines with unknown part numbers are skipped). The Ordering UI asks for confirmation first.
 - Errors are `{ "error": string }`; 400 validation, 401 auth, 404 missing, 409 duplicate key.
 
 ## Job Manager API (all under `/jobs-api`)
-- `GET/POST /jobs` (Job Id `JOB-0001`... generated from a Postgres sequence), `GET/PATCH/DELETE /jobs/:jobId` (delete is 409 while the job has parts), `GET /parts` (proxy of Stock `GET /api/stock`), `POST /jobs/:jobId/parts` `{partNumber, quantity}`, `DELETE /jobs/:jobId/parts/:partNumber`, `GET /healthz`, `GET /openapi.json` (public, generated from `jobs-openapi.yaml`)
+- `GET/POST /jobs` (Job Id `JOB-0001`... generated from a Postgres sequence; `search` partial-matches Job Id, Client or a Part Number on the job), `GET /jobs/summary` (`{jobCount, partCount, totalQuantity, totalValue}`; totalValue sums quantity * Stock Control cost per part, fetched over HTTP), `GET/PATCH/DELETE /job/:jobId` (note singular `/job/` for single items, matching Stock/Ordering's per-item shape; delete is 409 while the job has parts), `GET /parts` (proxy of Stock `GET /api/stock`), `POST /job/:jobId/parts` `{partNumber, quantity}`, `DELETE /job/:jobId/parts/:partNumber`, `GET /healthz` (also confirms DB connectivity), `GET /openapi.json` (public, generated from `jobs-openapi.yaml`)
 - Add part: reads the stock item, takes `min(qty, available)` via Stock `POST /stock/:partNumber/adjust` (one retry if another caller wins a race), puts any shortfall on the Draft order whose `reference` is the job id (creating it, or appending via `POST /order/:n/lines`) at the stock item's cost. Adding the same part again accumulates. If the order step fails the taken stock is returned and the API answers 502.
 - Remove part: returns the allocated quantity to stock. Quantity already on a Draft order stays there (edit it in Ordering).
 - Auth: same pattern as the stock API (Bearer `JOBS_API_KEY`, falling back to `STOCK_API_KEY`/`SESSION_SECRET`; same-origin browser requests allowed).
 - Env: `STOCK_API_KEY` (or `SESSION_SECRET`) so jobs-api can call the stock/ordering API; optional `STOCK_API_BASE_URL` (default `http://localhost:8080/api`), `DEFAULT_SUPPLIER_NAME` (supplier on shortfall orders, default "Unassigned (job shortfall)"), `JOBS_API_KEY`. `DATABASE_URL` as for the other API.
 
 ## Data Model
-- `stock_items`: partNumber (PK), itemName, description, quantity, cost, retailPrice, binNumber
+- `stock_items`: partNumber (PK), itemName, description, supplier, quantity, cost, retailPrice, binNumber
 - `orders`: orderNumber (PK, optional on create), orderDate, supplierName, status (default `Draft`), reference (free text, e.g. a job id; default empty)
 - `order_lines`: (orderNumber, lineNumber) PK, partNumber, externalPartNumber, description, quantity, unitPrice
 
@@ -49,8 +50,8 @@ Proof-of-concept apps built to show that automation services such as n8n can dri
 
 ## Current Status
 - Status: In Progress (POC). Job Manager is built, typechecks, and has been tested end to end in the running apps (manual test by the user, all good).
-- Current branch: `main` (Job Manager merged; remote is github.com/ukblumf/replit-work)
-- Next: see ROADMAP.md (test the n8n workflows in your instance; optional n8n dashboard aggregator)
+- Current branch: `feat/api-endpoints-revisit` (API endpoints revisit in progress — typechecks clean; not yet tested live, since the Replit workflow needs to restart to pick up the backend changes; remote is github.com/ukblumf/replit-work)
+- Next: see ROADMAP.md (restart the app to test the new search/summary/health endpoints live; then update the n8n chat agent tools and UIs to use them)
 
 ## Known Issues
 - Auth bypass (accepted for the POC): `stockApiAuth` skips the API key when `Origin` matches `Host` or `Sec-Fetch-Site` is `same-origin`. Both headers can be forged by any non-browser client, so the API is effectively open. The UIs send no key and depend on this, so removing it breaks them. Decision: leave as-is while this is a private demo; revisit before showing to a client.
@@ -66,3 +67,6 @@ Proof-of-concept apps built to show that automation services such as n8n can dri
 - Job Manager owns its own DB schema for jobs only and calls the Stock and Orders APIs for everything else, with no direct access to their tables. The Job Manager API (not the browser) makes those calls so the stock API key stays on the server and n8n can trigger the same flow.
 - Stock changes from other apps use the atomic `adjust` endpoint, not a read-then-`PATCH` of the quantity.
 - Job Manager can partly fail across services (stock taken, order or DB write fails). The API rolls stock back when the order step fails; if the final DB write fails it logs the details for manual correction.
+- All three apps share the same endpoint shape: health (with DB check), summary, CRUD, and case-insensitive/partial search via query params on the list endpoint (not a dedicated `/search` endpoint).
+- Single-item route naming: Stock uses `/stock/:partNumber`, Ordering `/order/:orderNumber` (singular, kept as-is — an existing quirk not worth a breaking rename), Jobs `/job/:jobId` (renamed from `/jobs/:jobId` to match the plural-list/singular-item pattern). `GET/POST /jobs` (list/create) are unchanged.
+- Jobs summary's `totalValue` needs each part's cost, which Job Manager does not store; it fetches all stock items via the Stock API (`listStock()`, no shared DB) and looks up cost per part number. Parts no longer in stock contribute 0 rather than erroring.

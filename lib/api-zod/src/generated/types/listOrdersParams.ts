@@ -5,6 +5,7 @@
  * Authenticated Stock Control and Ordering API. Send the configured API key as a Bearer token in the Authorization header.
  * OpenAPI spec version: 0.1.0
  */
+import type { ListOrdersStatus } from './listOrdersStatus';
 
 export type ListOrdersParams = {
 /**
@@ -19,4 +20,12 @@ partNumber?: string;
  * Exact match on the order Reference (e.g. a Job Manager job id).
  */
 reference?: string;
+/**
+ * Case-insensitive partial match on Supplier Name.
+ */
+supplier?: string;
+/**
+ * Exact match on Status.
+ */
+status?: ListOrdersStatus;
 };

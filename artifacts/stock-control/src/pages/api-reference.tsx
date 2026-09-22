@@ -51,12 +51,19 @@ export default function ApiReference() {
           method="GET" 
           path="/api/stock" 
           description="List all stock items. Use query parameters for filtering."
-          params={[{ name: "partNumber", type: "string", desc: "Case-insensitive partial match on Part Number" }]}
+          params={[
+            { name: "partNumber", type: "string", desc: "Case-insensitive partial match on Part Number" },
+            { name: "supplier", type: "string", desc: "Case-insensitive partial match on Supplier" },
+            { name: "description", type: "string", desc: "Case-insensitive partial match on Description" },
+            { name: "minQuantity / maxQuantity", type: "integer", desc: "Quantity held range (inclusive)" },
+            { name: "minValue / maxValue", type: "number", desc: "Value held range, quantity * cost (inclusive)" },
+          ]}
           response={`[
   {
     "partNumber": "PN-1001",
     "itemName": "Hex Bolt M8x20",
     "description": "Grade 8.8 steel",
+    "supplier": "Acme Fasteners",
     "quantity": 500,
     "cost": 0.15,
     "retailPrice": 0.45,
@@ -67,13 +74,14 @@ export default function ApiReference() {
 ]`}
         />
 
-        <EndpointCard 
-          method="POST" 
-          path="/api/stock" 
+        <EndpointCard
+          method="POST"
+          path="/api/stock"
           description="Create a new stock item in the ledger."
           body={`{
   "partNumber": "PN-1001",
   "itemName": "Hex Bolt M8x20",
+  "supplier": "Acme Fasteners",
   "quantity": 500,
   "cost": 0.15,
   "retailPrice": 0.45,

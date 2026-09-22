@@ -6,8 +6,25 @@
  *
  * OpenAPI spec version: 0.1.0
  */
+export type HealthStatusStatus = typeof HealthStatusStatus[keyof typeof HealthStatusStatus];
+
+
+export const HealthStatusStatus = {
+  ok: 'ok',
+  error: 'error',
+} as const;
+
+export type HealthStatusDatabase = typeof HealthStatusDatabase[keyof typeof HealthStatusDatabase];
+
+
+export const HealthStatusDatabase = {
+  ok: 'ok',
+  error: 'error',
+} as const;
+
 export interface HealthStatus {
-  status: string;
+  status: HealthStatusStatus;
+  database: HealthStatusDatabase;
 }
 
 export interface Error {
@@ -90,6 +107,17 @@ export interface JobSummary {
   partCount: number;
 }
 
+export interface JobSummaryTotals {
+  /** Total number of jobs. */
+  jobCount: number;
+  /** Total number of part lines across all jobs. */
+  partCount: number;
+  /** Sum of quantity across all job parts. */
+  totalQuantity: number;
+  /** Sum of quantity * Stock Control cost across all job parts. Parts no longer in stock contribute 0. */
+  totalValue: number;
+}
+
 /**
  * Missing or invalid API key
  */
@@ -119,7 +147,7 @@ search?: string;
 
 export type ListJobsParams = {
 /**
- * Case-insensitive partial match on Job Id or Client.
+ * Case-insensitive partial match on Job Id, Client or a Part Number on the job.
  */
 search?: string;
 };

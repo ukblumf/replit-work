@@ -1,13 +1,19 @@
 import { Router, type IRouter } from "express";
 import spec from "../generated/openapi.json";
+import { pool } from "../db";
 import { jobsApiAuth } from "../middlewares/auth";
 import jobsRouter from "./jobs";
 import partsRouter from "./parts";
 
 const router: IRouter = Router();
 
-router.get("/healthz", (_req, res) => {
-  res.json({ status: "ok" });
+router.get("/healthz", async (_req, res) => {
+  try {
+    await pool.query("select 1");
+    res.json({ status: "ok", database: "ok" });
+  } catch {
+    res.status(503).json({ status: "error", database: "error" });
+  }
 });
 
 // Real OpenAPI contract (generated from lib/api-spec/jobs-openapi.yaml by codegen); public like /healthz.
