@@ -1,14 +1,15 @@
-import { type ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ErrorBoundary } from '@/components/error-boundary';
 import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import NotFound from '@/pages/not-found';
 import {
-  ArrowUpRight,
+  BookOpen,
   Boxes,
   ClipboardList,
   Wrench,
+  X,
 } from 'lucide-react';
 import {
   Route,
@@ -19,7 +20,15 @@ import {
 
 const queryClient = new QueryClient();
 
+type ActiveDocs = { title: string; href: string };
+
 function Home() {
+  const [activeDocs, setActiveDocs] = useState<ActiveDocs | null>(null);
+
+  const toggleDocs = (title: string, href: string) => {
+    setActiveDocs((current) => (current?.href === href ? null : { title, href }));
+  };
+
   return (
     <main className="service-shell">
       <div className="mx-auto flex min-h-[100dvh] w-full max-w-[1280px] flex-col px-5 sm:px-8 lg:px-12">
@@ -39,8 +48,8 @@ function Home() {
           </p>
         </header>
 
-        <section className="flex flex-1 flex-col justify-center pb-12 pt-16 sm:pb-16 sm:pt-24 lg:pt-28">
-          <div className="grid w-full -translate-y-16 gap-4 sm:-translate-y-24 lg:-translate-y-32 md:grid-cols-3">
+        <section className="flex flex-1 flex-col justify-start pb-12 pt-10 sm:pb-16 sm:pt-14 lg:pt-16">
+          <div className="grid w-full gap-4 md:grid-cols-3">
             <ServiceCard
               className="service-reveal service-reveal-delay-1"
               icon={<Boxes className="h-6 w-6" strokeWidth={1.8} />}
@@ -48,7 +57,10 @@ function Home() {
               title="Stock Control"
               description="Track inventory, movements, and what needs attention next."
               href="/stock-control/"
+              apiReferenceHref="/stock-control/api-reference"
               testId="link-stock-control"
+              isDocsOpen={activeDocs?.href === '/stock-control/api-reference'}
+              onToggleDocs={toggleDocs}
             />
             <ServiceCard
               className="service-reveal service-reveal-delay-2"
@@ -57,7 +69,10 @@ function Home() {
               title="Ordering"
               description="Keep purchasing moving from request through delivery."
               href="/ordering/"
+              apiReferenceHref="/ordering/api-reference"
               testId="link-ordering"
+              isDocsOpen={activeDocs?.href === '/ordering/api-reference'}
+              onToggleDocs={toggleDocs}
             />
             <ServiceCard
               className="service-reveal service-reveal-delay-3"
@@ -66,9 +81,36 @@ function Home() {
               title="Job Manager"
               description="Plan the day, coordinate work, and keep jobs on course."
               href="/jobs/"
+              apiReferenceHref="/jobs/api-reference"
               testId="link-job-manager"
+              isDocsOpen={activeDocs?.href === '/jobs/api-reference'}
+              onToggleDocs={toggleDocs}
             />
           </div>
+
+          {activeDocs && (
+            <div className="service-reveal mt-6 w-full overflow-hidden rounded-sm border border-[hsl(var(--card-border))] bg-[hsl(var(--card)/0.88)] shadow-[0_1.2rem_2.5rem_hsl(211_65%_11%/0.06)]">
+              <div className="flex items-center justify-between border-b border-[hsl(var(--border)/0.8)] px-5 py-3">
+                <p className="font-mono text-[0.7rem] font-bold uppercase tracking-[0.14em] text-[hsl(var(--muted-foreground))]">
+                  {activeDocs.title} <span className="text-[hsl(var(--accent))]">·</span> API Reference
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setActiveDocs(null)}
+                  aria-label="Close API reference"
+                  className="rounded-sm p-1 text-[hsl(var(--muted-foreground))] transition-colors hover:text-[hsl(var(--primary))]"
+                >
+                  <X className="h-4 w-4" strokeWidth={2.2} />
+                </button>
+              </div>
+              <iframe
+                key={activeDocs.href}
+                src={activeDocs.href}
+                title={`${activeDocs.title} API Reference`}
+                className="h-[75vh] w-full bg-[hsl(var(--background))]"
+              />
+            </div>
+          )}
         </section>
 
         <footer className="service-reveal service-reveal-delay-3 flex items-center justify-between border-t border-[hsl(var(--border)/0.8)] py-5">
@@ -91,7 +133,10 @@ type ServiceCardProps = {
   title: string;
   description: string;
   href: string;
+  apiReferenceHref: string;
   testId: string;
+  isDocsOpen: boolean;
+  onToggleDocs: (title: string, href: string) => void;
 };
 
 function ServiceCard({
@@ -101,34 +146,45 @@ function ServiceCard({
   title,
   description,
   href,
+  apiReferenceHref,
   testId,
+  isDocsOpen,
+  onToggleDocs,
 }: ServiceCardProps) {
   return (
-    <a
-      className={`service-card group p-6 sm:p-7 ${className}`}
-      href={href}
-      data-testid={testId}
-      aria-label={`Open ${title}`}
-    >
-      <div className="flex items-start justify-between">
-        <div className="service-card__icon" aria-hidden="true">
-          {icon}
+    <div className={`service-card group p-6 sm:p-7 ${className}`}>
+      <a
+        className="relative z-10 block"
+        href={href}
+        data-testid={testId}
+        aria-label={`Open ${title}`}
+      >
+        <div className="flex items-start justify-between">
+          <div className="service-card__icon" aria-hidden="true">
+            {icon}
+          </div>
+          <span className="service-card__number">{number}</span>
         </div>
-        <span className="service-card__number">{number}</span>
-      </div>
-      <div className="relative z-10">
-        <h2 className="text-2xl font-semibold tracking-[-0.045em] text-[hsl(var(--primary))]">
-          {title}
-        </h2>
-        <p className="mt-2 max-w-[18rem] text-sm leading-6 text-[hsl(var(--muted-foreground))]">
-          {description}
-        </p>
-        <span className="service-card__arrow mt-7">
-          Open workspace
-          <ArrowUpRight className="h-4 w-4" strokeWidth={2.2} />
-        </span>
-      </div>
-    </a>
+        <div className="mt-6">
+          <h2 className="text-2xl font-semibold tracking-[-0.045em] text-[hsl(var(--primary))]">
+            {title}
+          </h2>
+          <p className="mt-2 max-w-[18rem] text-sm leading-6 text-[hsl(var(--muted-foreground))]">
+            {description}
+          </p>
+        </div>
+      </a>
+      <button
+        type="button"
+        onClick={() => onToggleDocs(title, apiReferenceHref)}
+        aria-expanded={isDocsOpen}
+        data-testid={`${testId}-api-reference`}
+        className={`service-card__arrow relative z-10 mt-7 ${isDocsOpen ? 'text-[hsl(var(--accent))]' : ''}`}
+      >
+        {isDocsOpen ? 'Close API Reference' : 'Open API Reference'}
+        <BookOpen className="h-4 w-4" strokeWidth={2.2} />
+      </button>
+    </div>
   );
 }
 

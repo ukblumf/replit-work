@@ -165,7 +165,7 @@
     box-shadow: 0 1.7rem 3rem hsl(211 65% 11% / 0.12);
   }
 
-  .service-card:focus-visible {
+  .service-card:focus-within {
     outline: 3px solid hsl(var(--accent) / 0.4);
     outline-offset: 4px;
   }
