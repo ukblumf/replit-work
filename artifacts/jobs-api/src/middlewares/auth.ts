@@ -11,26 +11,10 @@ function safelyMatches(candidate: string, expected: string): boolean {
   );
 }
 
-// Same rules as the Stock/Ordering API (stockApiAuth): same-origin browser requests are let
-// through, everything else needs `Authorization: Bearer <key>`. The same-origin check can be
-// forged by non-browser clients; this is the accepted POC trade-off recorded in CONTEXT.md.
+// Every caller — browser or server-to-server — must present a valid Bearer key.
+// The Job Manager UI prompts for it once and stores it client-side (see
+// src/lib/api-key.ts), then attaches it to every request via setAuthTokenGetter.
 export function jobsApiAuth(req: Request, res: Response, next: NextFunction): void {
-  const origin = req.get("origin");
-  const host = req.get("host");
-  const fetchSite = req.get("sec-fetch-site");
-  let originMatches = false;
-  if (typeof origin === "string" && typeof host === "string") {
-    try {
-      originMatches = new URL(origin).host === host;
-    } catch {
-      originMatches = false;
-    }
-  }
-  if (fetchSite === "same-origin" || originMatches) {
-    next();
-    return;
-  }
-
   const expectedKey =
     process.env.JOBS_API_KEY ?? process.env.STOCK_API_KEY ?? process.env.SESSION_SECRET;
   const authorization = req.get("authorization");

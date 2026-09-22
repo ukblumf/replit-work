@@ -9,6 +9,7 @@ import {
   Router as WouterRouter,
 } from 'wouter';
 
+import { ApiKeyGate } from '@/components/api-key-gate';
 import { Layout } from '@/components/layout';
 import JobList from '@/pages/jobs/list';
 import JobForm from '@/pages/jobs/form';
@@ -50,10 +51,12 @@ function RoutedErrorBoundary({ children }: { children: ReactNode }) {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, '')}>
-        <Router />
-      </WouterRouter>
-      <Toaster />
+      <ApiKeyGate>
+        <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, '')}>
+          <Router />
+        </WouterRouter>
+        <Toaster />
+      </ApiKeyGate>
     </QueryClientProvider>
   );
 }

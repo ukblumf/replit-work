@@ -11,6 +11,7 @@ import {
   Router as WouterRouter,
 } from 'wouter';
 
+import { ApiKeyGate } from '@/components/api-key-gate';
 import { Layout } from '@/components/layout';
 import Dashboard from '@/pages/dashboard';
 import ItemDetail from '@/pages/item-detail';
@@ -43,10 +44,12 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, '')}>
-          <Router />
-        </WouterRouter>
-        <Toaster />
+        <ApiKeyGate>
+          <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, '')}>
+            <Router />
+          </WouterRouter>
+          <Toaster />
+        </ApiKeyGate>
       </TooltipProvider>
     </QueryClientProvider>
   );

@@ -11,30 +11,14 @@ function safelyMatches(candidate: string, expected: string): boolean {
   );
 }
 
+// Every caller — browser or server-to-server — must present a valid Bearer key.
+// The UIs prompt for it once and store it client-side (see src/lib/api-key.ts
+// in each app), then attach it to every request via setAuthTokenGetter.
 export function stockApiAuth(
   req: Request,
   res: Response,
   next: NextFunction,
 ): void {
-  const origin = req.get("origin");
-  const host = req.get("host");
-  const fetchSite = req.get("sec-fetch-site");
-  let originMatches = false;
-  if (typeof origin === "string" && typeof host === "string") {
-    try {
-      originMatches = new URL(origin).host === host;
-    } catch {
-      originMatches = false;
-    }
-  }
-  const isSameOriginBrowserRequest =
-    fetchSite === "same-origin" || originMatches;
-
-  if (isSameOriginBrowserRequest) {
-    next();
-    return;
-  }
-
   const expectedKey = process.env.STOCK_API_KEY ?? process.env.SESSION_SECRET;
   const authorization = req.get("authorization");
   const candidate = authorization?.startsWith("Bearer ")
